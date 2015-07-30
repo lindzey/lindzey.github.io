@@ -25,7 +25,31 @@
     <lastmod>2014-09-04T23:00:00-05:00</lastmod>
   </url>
   <url>
-    <loc>http://lindzey.github.io/blog/</loc>
+    <loc>http://lindzey.github.io/drafts/allPosts/2013-10-13-wanted-herd-of-robots.html</loc>
+  </url>
+  <url>
+    <loc>http://lindzey.github.io/drafts/allPosts/2013-10-14-robot-setup.html</loc>
+  </url>
+  <url>
+    <loc>http://lindzey.github.io/drafts/allPosts/2013-10-15-m3pi-ros-driver.html</loc>
+  </url>
+  <url>
+    <loc>http://lindzey.github.io/drafts/allPosts/2013-10-15-position-estimation.html</loc>
+  </url>
+  <url>
+    <loc>http://lindzey.github.io/drafts/allPosts/2013-10-18-tutorial-index.html</loc>
+  </url>
+  <url>
+    <loc>http://lindzey.github.io/drafts/allPosts/2014-07-25-hacker-school-application.html</loc>
+  </url>
+  <url>
+    <loc>http://lindzey.github.io/drafts/allPosts/2014-07-25-rejections.html</loc>
+  </url>
+  <url>
+    <loc>http://lindzey.github.io/drafts/allPosts/2014-07-25-ut-statement-of-purpose.html</loc>
+  </url>
+  <url>
+    <loc>http://lindzey.github.io/drafts/allPosts/2014-07-25-why-ros.html</loc>
   </url>
   <url>
     <loc>http://lindzey.github.io/archives/</loc>
@@ -37,6 +61,13 @@
     <loc>http://lindzey.github.io/blog/archives/</loc>
   </url>
   <url>
+    <loc>http://lindzey.github.io/blog/</loc>
+  </url>
+  <url>
     <loc>http://lindzey.github.io/about/</loc>
+  </url>
+  <url>
+    <loc>http://lindzey.github.io/drafts/chi-squared.html</loc>
+    <lastmod>2015-07-28T00:24:52-05:00</lastmod>
   </url>
 </urlset>
