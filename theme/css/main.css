@@ -377,6 +377,11 @@ article h2.title a:hover {
   color: #960d20;
   border-bottom: 0px;
 }
+
+article h2.title a.unpublished {
+  color: #7a1e99
+}
+
 @media screen and (max-width: 620px) {
   article h2.title {
     font-size: 18px;
@@ -459,7 +464,8 @@ article .entry-content h2:before {
   width: 100%;
 }
 
-article .entry-content img, article .entry-content video {
+article .entry-content img,
+article .entry-content video {
   max-width: 100%;
   height: auto;
   -webkit-border-radius: 5px;
@@ -471,6 +477,27 @@ article .entry-content img, article .entry-content video {
   border-bottom: 0px;
   margin-top: 5px;
 }
+
+/* Trying to get image alt-text to show up ...
+*/
+img {
+  color: #fff
+}
+
+/* added so I can rotate images when inserting
+in markdown using html. see:
+http://stackoverflow.com/questions/20061774/rotate-an-image-in-image-source-in-html?lq=1
+*/
+/*
+article .entry-content img .rotate90 {
+    -webkit-transform: rotate(180deg);
+    -moz-transform: rotate(180deg);
+    -o-transform: rotate(180deg);
+    -ms-transform: rotate(180deg);
+    transform: rotate(180deg);
+}
+*/
+
 
 article .entry-content blockquote {
   background: #ddd;
@@ -632,9 +659,15 @@ sup, sub {
   font-size: 80%;
 }
 
-article .footnote {
+
+article .footnote,
+article .simple-footnotes {
   font-size: 80%;
   margin-top: 10px;
+}
+article .simple-footnotes{
+  padding-top: 10px;
+  border-top: 1px solid #ddd;
 }
 
 
@@ -662,14 +695,16 @@ body div.alert-info strong {
   color: #3A87AD;
 }
 
+/*
 article .entry-content ol.simple-footnotes {
   font-size: 12px;
   margin-top: 10px;
-  padding-top: 10px;
+
   margin-left: 0px;
   padding-left: 20px;
   border-top: 1px solid #ddd;
 }
+*/
 
 
 /* doesn't show up in leanpress - I think it treats the index differently */
