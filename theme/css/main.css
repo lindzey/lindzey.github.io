@@ -6,7 +6,7 @@
 }
 
 body {
-  font-family:"HelveticaNeue-Light","Helvetica Neue Light","Helvetica Neue",Helvetica,Arial,"Lucida Grande",sans-serif;  
+  font-family:"HelveticaNeue-Light","Helvetica Neue Light","Helvetica Neue",Helvetica,Arial,"Lucida Grande",sans-serif;
   /*  font-family: 'Slabo 13px', serif; */
   font-size: 18px;
   font-weight: 300;
@@ -83,8 +83,8 @@ a:hover {
 
 
 
-/* This bit controls the transition from full-width 
-to single centered column. I think it looks better when 
+/* This bit controls the transition from full-width
+to single centered column. I think it looks better when
 you don't have an abrubt narrowing when the window actually
 gets wider */
 header, footer, section {
@@ -184,9 +184,9 @@ header .tagline{
 }
 
 
-/* main-nav controls the links in a row just below the title 
+/* main-nav controls the links in a row just below the title
 However, this is awfully complicated ... it seems like it has
-been adapted from a system that allows nested menus, not just 
+been adapted from a system that allows nested menus, not just
 this simple row.*/
 
 #main-nav {
@@ -484,6 +484,18 @@ img {
   color: #fff
 }
 
+
+/* LEL Oct 22, 2019.
+ * Trying to get images to center, as suggested in
+ * https://stackoverflow.com/questions/7055393/center-image-using-text-align-center
+ */
+article img.center {
+    display: block;
+    margin: 0 auto;
+}
+
+
+
 /* added so I can rotate images when inserting
 in markdown using html. see:
 http://stackoverflow.com/questions/20061774/rotate-an-image-in-image-source-in-html?lq=1
@@ -534,6 +546,13 @@ article .entry-content .caption {
   padding-left: 25px;
   position: relative;
 }
+/* Added 22 Oct 2019 by LEL
+ * Trying to make a smaller "acknowledgements" section...
+ */
+article .thanks {
+    font-size: 0.85em;
+}
+
 article .entry-content .video-container {
   position: relative;
   padding-bottom: 56.25%;
@@ -578,7 +597,7 @@ article .entry-content .video-container iframe, article .entry-content .video-co
 .post .meta a:visited {
     border-bottom: 1px solid rgba(191, 2, 34, 0);
     color: #960d20
-                        
+
 }
 .post .meta a:hover {
   border-bottom: 1px solid #960d20;
@@ -732,5 +751,3 @@ article.index h2.title {
   margin-bottom: 10px;
   padding-bottom: 10px;
 }
-
-
