@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>At Sea With Sentry - Laura Lindzey</title>
+
+    <meta name="author" content="Laura Lindzey">
+
+    <link rel="stylesheet" href="/theme/css/main.css?">
+    <link rel="stylesheet" href="/theme/css/pygment.css?">
+
+    <link rel="icon" href="/images/favicon.ico" type="image/x-icon">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<link href="/feeds/all.atom.xml" rel="alternate" title="Laura Lindzey" type="application/atom+xml">
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-43181776-1']);
+    _gaq.push(['_trackPageview']);
+    (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+    </script>
+  </head>
+  <body>
+      <header>
+        <h1><a href="/index.html">Laura Lindzey</a></h1>
+        <span class="tagline"> robots, science, code </span>
+        <br>
+<nav id="main-nav">
+  <ul>
+    <li><a href="/index.html">Blog</a></li>
+    <li><a href="/archives.html">Archives</a></li>
+    <li><a href="/pages/about.html">About</a></li>
+  </ul>
+</nav>
+      </header>
+      <section>
+<article class="post">
+    <h2 class="title">
+      At Sea With Sentry
+    </h2>
+    <div class="meta">
+      <div class="date">January 03, 2020</div>
+    </div>
+  <div class="entry-content">
+    <div class="figure">
+  <img class="center" alt="Sentry being recovered after a dive" src="/images/sentry_watchstanding/sentry_recovery.jpg" style="width: 100%; max-width:600px; height: auto">
+  <p class="caption">
+  Sentry being brought back on board the Atlantis after a dive
+</p>
+</div>
+
+<p>I'm a software engineer in the Deep Submergence Lab at WHOI, and I'm currently 
+at sea with Sentry, a robot whose primary mission is to map the ocean floor.
+So, what do I do when at sea? And why are they sending software engineers out 
+for operations?</p>
+
+
+<p>At sea, my job usually includes:</p>
+<ol>
+<li>Prepping the vehicle for launch (we have an extensive checklist, built up 
+out of years of mistakes)</li>
+<li>Standing watch while the robot is in the water. Depending on the cruise and 
+dive cadence, this will be a 2-5 hour shift daily. </li>
+<li>Processing the data for the scientists after the robot is recovered</li>
+<li>Debugging and fixing anything that goes wrong.</li>
+<li>Using time when sentry is on the deck and during ascents to test new 
+capabilities (we do a lot in simulation, but don’t have a full hardware testbed) </li>
+</ol>
+<p><strong>First -- what is Sentry, and what does it do?</strong></p>
+<div class="figure">
+  <img class="center" alt="CAD drawing of Sentry" src="/images/sentry_watchstanding/sentry_internals_annotated.png" style="width: 100%; max-width:600px; height: auto">
+  <p class="caption">
+  Rendering of Sentry without the skins or syntactic foam, with components mentioned in this post labeled. The Battery Housing has also been omitted for clarity. Thanks to Manyu Belani for the base image.
+
+</p></div>
+
+<p>The original motivation for developing Sentry and adding it to the National Deep Submergence Facility was to create multibeam maps of the sea floor at night for Alvin (a manned submersible) to use the following day during its dive. 
+Of course, once you have a robot with the basic capability to follow a given path, scientists will come up with plenty of other uses for it. 
+So, in addition to multibeam grids, we do a lot of photo surveys, which require swimming ~5 meters above the ocean floor, sometimes in pretty rough terrain.</p>
+<div class="figure">
+  <img class="center" alt="Multibeam map" src="/images/sentry_watchstanding/sentry505_mb_processing.jpg" style="width: 100%; max-width:600px; height: auto">
+  <p class="caption">
+Multibeam data collected on dive sentry505 on the 2018-cordes cruise. This screencap was taken during post-processing using mbsystem. Black lines show the path Sentry swam, and the resulting topography is hillshaded. You can see some minor alignment errors where the multibeam swaths overlap that are corrected with further processing.
+
+</p></div>
+
+<p>Plenty of robots can handle smooth terrain -- Sentry’s real strength is in steeper / rougher terrain where its actuated fins allow it to maintain control while slowing down and climbing to a much greater extent than a torpedo-style AUV could. </p>
+<p><strong>What does a typical mission look like?</strong></p>
+<p>Sentry's unique control scheme means that propelling itself to the bottom like torpedo-shaped AUVs typically do by swimming in a circle would burn up a lot of battery power. 
+Since mission length is primarily limited by the batteries, that's no good. 
+It would also be slow. 
+Instead, we launch Sentry with “descent weights" that make it negatively buoyant, so it descends at ~0.6m/s. Once it detects the sea floor with one of its sonars, it drops the descent weights and becomes neutrally buoyant. 
+It then spends 8-20+ hours swimming pre-programmed survey lines. 
+At the end of the dive, it drops the ascent weights and floats to the surface at ~1m/s.
+This is the same speed as a leisurely stroll -- ascent and descent can each take well over an hour in deeper water.</p>
+<p><strong>Wait. Isn't Sentry autonomous? Why do humans need to monitor it?</strong></p>
+<p>Even if a dive goes perfectly, we will have human interaction twice: first to correct the robot's position estimate and once to tell it to drop the ascent weights.</p>
+<p><em>Initial Shift</em></p>
+<p>When Sentry is at the surface, it know where it is using GPS. 
+However, this isn’t used in the control loop — we just tell it where the start of the survey is, and it assumes that it has been dropped exactly there.</p>
+<p>Once within ~100m of the ocean floor, Sentry’s DVL<sup id="sf-sentry-watchstanding-1-back"><a title=' Doppler Velocity Logger — this instrument has 4 sonar beams angled out, and by using the doppler shift of each beam and assuming that whatever surface is generating a return is also stationary, you can compute the 3D velocity of the robot. This is similar to how "radar guns" are able to detect speeding vehicles. ' class="simple-footnote" href="#sf-sentry-watchstanding-1">1</a></sup> is able to make observations of Sentry’s relative velocity. Combined with pressure/depth data and INS accelerations / orientation, a simple kalman filter can estimate Sentry’s position relative to wherever the dive started. </p>
+<p>However, when Sentry is in the middle of the water column, there aren’t any good sensor inputs for it to estimate its position: double-integrating accelerations is noisy and diverges quickly. So, its onboard code just assumes that it doesn’t drift at all. (Hah.) </p>
+<p>Whenever it gets to the bottom, the operator can compute how much it drifted by using the Ship’s USBL to get Sentry’s position relative to the ship and comparing that to where Sentry thinks it is.</p>
+<div class="figure">
+  <img class="center" alt="navg3 operator interface" src="/images/sentry_watchstanding/navg3.png" style="width: 100%; max-width:600px; height: auto">
+  <p class="caption">
+“navg3” interface, displaying the local bathymetry (contour lines) the ship’s current position (magenta polygon), Sentry’s position (yellow robot), the commanded path (red/green lines), and where Sentry has actually traveled (grey dots)
+</p>
+</div>
+
+<p>The surveys are designed with a few ninety degree turns at the start, since observing a corner in sentry’s path makes it easy to compute the offset.
+That offset is then manually entered and acoustically transmitted to sentry, allowing us to follow tracklines to ~10m accuracy, rather than swimming the pre-planned survey offset by up to hundreds of meters.</p>
+<p>Yes, it is theoretically possible to send the USBL fixes down and have Sentry update its own shift. 
+This is definitely on the wishlist, but we have limited developer time and money. 
+However, it's also more complicated than you might think. 
+The USBL fix jumps around, which means that the resulting position estimate can jump. (This is also a common problem for autonomous ground vehicles, where the GPS positions jump but you want control to be smooth and relative to what the sensors see.)
+Overcorrecting to a jumpy position estimate isn't good for a survey, where it is more important to swim a grid pattern with even coverage than it is for the lines to be exactly at a given coordinate. 
+We also sometimes re-purpose the shift to move Sentry out of the way of other assets that are in the water.<sup id="sf-sentry-watchstanding-2-back"><a title=" We don't have a good way to send updated plans to Sentry during a dive; however, updating the offset allows us to arbitrarily translate the existing survey geometry.[\ref]" class="simple-footnote" href="#sf-sentry-watchstanding-2">2</a></sup></p>
+<p><em>Terminating the dive</em></p>
+<p>Second, it's best for everybody if Sentry stays on the bottom until the boat is ready to recover it. 
+So, we want to manually trigger the ascent if at all possible. 
+It's safer down there -- once on the surface, Sentry is subject to currents, waves (wear-and tear on mechanical parts) and could get run over by another ship. 
+Plus, all of our acoustic communications stop working when Sentry is bobbing at the surface with the transducers out of the water. 
+At that point, we are limited to receiving text messages with its GPS coordinates via Iridium, a radio beacon that the ship can detect to get a bearing, visual strobes, and a short-range freewave radio (useful within a few hundred meters to joystick Sentry into position for recovery). </p>
+<p>Sentry would cost millions to replace and there's only one, so we really want it to come back. So, we have MANY ways for sentry to decide to drop its weights and return to the surface:</p>
+<ol>
+<li>The operator uses the acoustic modem to send that is processed through the software stack, causing the cams to open and drop the weights. This is the preferred method.</li>
+<li>The operator uses a separate transducer to send an acoustic command to the XRs/LBL transponders. On the vehicle, they are entirely self contained, running on internal battery power, and have direct control over both the cams and the burnwires.<sup id="sf-sentry-watchstanding-3-back"><a title=" The primary release is a cam that turns to release the weight, and the second is a burnwire, which corrodes when current is run through it. " class="simple-footnote" href="#sf-sentry-watchstanding-3">3</a></sup> The transponders themselves are also redundant -- there are two of them (one listens at 14kHz and the other at 10.5kHz), and each controls the motor to one ascent weight and the burnwire to the other. So, if one fails (or the acoustic conditions aren't favorable for its frequency) the other is sufficient to drop both weights.</li>
+<li>
+<p>Something goes wrong in the mission, triggering an abort in software: </p>
+<p>a. If battery percentage goes below 9% the weights will be released. Some battery power is kept in reserve for the ascent and for driving on the surface so we can remote control it into position to be snagged by the ship. </p>
+<p>b. Similarly, if a critical process dies, the vehicle will abort.</p>
+<p>c. If Sentry completes its mission and runs out of track lines, it aborts. This means that missions are always designed to have a holding pattern at the end, giving us a buffer of when to start the recovery.</p>
+</li>
+<li>
+<p>The abort timer runs out. Even if the entire computing stack has died, preventing the above methods from working, the XRs have a countdown after which they will release the weights.</p>
+</li>
+</ol>
+<p><em>Logistics / Coordination</em></p>
+<p>Sentry’s watchstander is also the point person for any ship operations that could affect Sentry. This type of thing will have been negotiated beforehand with the expedition leader, but the EL won’t always be awake at the time, and somebody has to be awake to answer questions about whether ship activities will cause an issue for Sentry. </p>
+<p>Our main priorities are to not have Sentry run into anything else (we’re generally OK with ~200m horizontal separation, or 100m vertical) and to ensure that we have good enough tracking with the ship’s USBL to “renavigate” the dive data to precisely localize it. These interactions might include:</p>
+<ul>
+<li>
+<p>When performing joint operations with multiple assets in the water, we might use a shift command to avoid Jason’s work site, if the surveys are close together. (Jason is a tethered ROV that is often also operated off the Atlantis)</p>
+</li>
+<li>
+<p>On one dive, the scientists wanted to do a CTD cast right in the middle of our survey area, which had to be timed precisely to avoid a potential collision. This was actually really cool — they used chemical data from Sentry's previous dive to precisely target the plume from a subsea vent, while Sentry was performing a lower-altitude camera survey in the same area.</p>
+</li>
+<li>
+<p>Dumping slops buckets. Kitchen scraps have to be dumped far away from Alvin’s dive site to avoid attracting sharks. The bridge will coordinate with us to minimize the impact on our USBL tracking while still transiting far enough away to dump them.</p>
+</li>
+<li>
+<p>In order to maximize science accomplished per ship hour, the chief scientist may want to move Atlantis outside of range of Sentry comms.</p>
+</li>
+</ul>
+<p><em>Failure handling</em></p>
+<p>Having humans in the loop results in a more robust system than you could have if all failure handling was required to be autonomous. It would be more satisfying from a robotics point of view if it could handle all failures on its own, but we only have one robot, and it has only done 550 dives (which is a lot for a platform like this!) so we're still discovering new failure modes. And detecting them all is a much harder problem. So, here are some examples of human interventions:</p>
+<ol>
+<li>On one dive, a corrupted bit in a sensor reading caused Sentry’s position estimate to go unstable, which led to Sentry running away. The watchstander was able to recognize this and intervene.</li>
+<li>On another dive, we could see that Sentry was struggling to maintain the programmed altitude with a forward speed of 1 m/s, so we lowered the commanded speed (thus switching it to a different control scheme), after which it was able to follow the planned tracks. it only finished part of the mission thanks to the reduced speed, but that's better than none, and far better than waking up the ship's crew to recover Sentry in the middle of the night. When we recovered Sentry, we discovered that one of the fin servos had failed, which was causing the control issues. </li>
+<li>Our bottom-detection algorithm for deciding when to drop weights at the start of a dive is very very simple, and sometimes triggers due to noisy DVL data (this has been happening a lot this cruise.) However,it is definitely better to drop the descent weight too early than to plow into the bottom at 1 meter per second. After dropping weights, Sentry will transition into a bottom-following mode, but that mode struggles when it doesn’t have good altitude data, because it can’t always figure out whether the sensor is failing to provide data because its too close to the ground or too far away. On a descent, the operator knows that the robot needs to dive deeper, so we can send an override command telling the bottom follower to drive down.</li>
+</ol>
+<p><strong>Cool! But how did you know that there was a problem in the first place? How can you communicate with something that's under up to 6km of water?</strong></p>
+<p>Acoustics!</p>
+<p>Underwater, you're pretty much limited to sound waves. Under perfect conditions, you might get a few hundred meters with visible light. GPS and Radio frequencies are much worse -- the conductivity of sea water mean that they attenuate within meters.
+So, we have a number of different acoustic instruments used for tracking and talking with Sentry. </p>
+<p><em>USBL</em></p>
+<p>The ultra short baseline (USBL) system is a commercial product that is permanently installed on Atlantis. A pole is deployed sticking through the hull (to get the transducers farther from any noise on the ship), and limits our speed to ~3 knots. Any assets that go in the water have a beacon attached, and the big head is able to get bearing and range to those beacons. </p>
+<div class="figure">
+  <img class="center" alt="Ranger2 GUI" src="/images/sentry_watchstanding/Ranger2.png" style="width: 100%; max-width:600px; height: auto">
+  <p class="caption">
+The Ranger2 GUI that is used for interacting with Atlantis's USBL. The ship’s position is at the center of the concentric circles, while Sentry’s beacon is marked with a green cross. The fading trail of green dots shows Sentry's past positions. 
+</p>
+</div>
+
+<p>This system is used for tracking Sentry; Atlantis has a display in the bridge, and the mate on watch will use it to stay close. We also use the positions reported by the USBL to post-process Sentry’s navigation estimates. This provides a big improvement in how well we can localize the scientific data -- there’s no GPS underwater, and dead-reckoning drifts over time.</p>
+<p><em>SMS</em></p>
+<p>The Avtrak USBL system also includes the ability to send short “SMS” message to the vehicle. We are limited to 64 ascii characters, and there is some awkward buffering at either end.</p>
+<p><em>Whifflenav</em></p>
+<p>I have no idea where this whimsical name came from. It’s a legacy set of hardware that used to be used in long base line navigation: they would put beacons on the sea floor, and a robot could estimate its location by calculating ranges to multiple beacons. Now we have two independent beacons on the robot and they’re used to obtain the two-way travel time between the ship and the robot.</p>
+<div class="figure">
+  <img class="center" alt="Whifflenav GUI" src="/images/sentry_watchstanding/whiffle_back_and_forth.png" style="width: 100%; max-width:600px; height: auto">
+  <p class="caption">
+Plot showing intensities from the whifflenav transducer at 13kHz. Horizontal axis is time, and vertical is effectively range (it’s also time-since-ping, which becomes range after adjusting for the speed of sound in water). In this image, Sentry has been swimming back and forth -- you can see the turns when the line’s slope changes. In this region the ocean floor is very hard and rough, so in addition to the direct return from Sentry's beacon there are multipath effects (energy that traveled Sentry -&gt; ocean floor -&gt; Atlantis) that show up as a trail of reflections beneath/after Sentry’s sharp return.
+</p>
+</div>
+
+<p>The Whifflenav has the longest range of any of our acoustic instruments, and on dives where Sentry travels far from the ship, watchstanding can devolve into making sure that the observed ranges have inflection points corresponding to turns in the dive plan.</p>
+<p>The XRs are NOT used for communicating with the robot; historically, they were used to send a few bytes of information, but now, the only command they respond to is to abort the mission.</p>
+<p><em>Micromodem</em></p>
+<p>The Micromodem provides our highest bandwidth acoustic communications with Sentry. It has a shorter maximum range than the XRs, but this cruise, we’ve been getting micromodem messages from Sentry at ranges up to 9.5 km!</p>
+<p>Every minute on the minute, Sentry will send an update with basic information including its depth, altitude, heading, speed, and where it thinks it is. In addition, we have a number of “queues” that we can request, which have been hand-tuned to pack relevant information into a 64 byte message. For example, if sentry’s reported altitudes suggest control issues, we can request the status of its actuators. Or, at the start of a big camera survey, we might double-check that the frame count is incrementing to verify that the camera turned on and is working.</p>
+<div class="figure">
+  <img class="center" alt="Sentrysitter GUI" src="/images/sentry_watchstanding/sentrysitter_gui.png" style="width: 100%; max-width:600px; height: auto">
+  <p class="caption">
+Sentrysitter GUI. The radio buttons at the bottom are populated by the acoustic messages from Sentry, and the controls at the top are for transmitting additional commands.
+</p>
+</div>
+
+<p>The micromodem hardware is capable of sending significantly more information than this — at maximum data rates, it can encode ~2048 bytes in a ~15 second long transmission. My major project at the moment is developing the software support to make better use of all that unused bandwidth. </p>
+<div class="figure">
+  <img class="center" alt="Watching movies while on watch" src="/images/sentry_watchstanding/Watchstanding.jpg" style="width: 100%; max-width:600px; height: auto">
+  <p class="caption">
+Watchstanding is a great time to catch up on media consumption!
+</p>
+</div><ol class="simple-footnotes"><li id="sf-sentry-watchstanding-1">
+Doppler Velocity Logger — this instrument has 4 sonar beams angled out, and by using the doppler shift of each beam and assuming that whatever surface is generating a return is also stationary, you can compute the 3D velocity of the robot. This is similar to how "radar guns" are able to detect speeding vehicles.
+ <a class="simple-footnote-back" href="#sf-sentry-watchstanding-1-back">↩</a></li><li id="sf-sentry-watchstanding-2">
+We don't have a good way to send updated plans to Sentry during a dive; however, updating the offset allows us to arbitrarily translate the existing survey geometry.[\ref] <a class="simple-footnote-back" href="#sf-sentry-watchstanding-2-back">↩</a></li><li id="sf-sentry-watchstanding-3">
+The primary release is a cam that turns to release the weight, and the second is a burnwire, which corrodes when current is run through it.
+ <a class="simple-footnote-back" href="#sf-sentry-watchstanding-3-back">↩</a></li></ol>
+  </div><!-- /.entry-content -->
+</article>
+
+      </section>
+  </body>
+</html>

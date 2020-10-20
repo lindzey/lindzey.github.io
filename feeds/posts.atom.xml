@@ -1,86 +1,653 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom"><title>Laura Lindzey</title><link href="/" rel="alternate"></link><link href="/feeds/posts.atom.xml" rel="self"></link><id>/</id><updated>2016-02-27T00:00:00-06:00</updated><entry><title>Touring UTIG's Airplane</title><link href="/blog/2016/02/27/touring-utigs-airplane/" rel="alternate"></link><updated>2016-02-27T00:00:00-06:00</updated><author><name>Laura Lindzey</name></author><id>tag:,2016-02-27:blog/2016/02/27/touring-utigs-airplane/</id><summary type="html">&lt;p&gt;&lt;img src="/images/platform_tour/erebus_mkb.jpg" alt="Picture of JKB taxiing in front of Erebus" title="Picture of JKB taxiing in front of Erebus"&gt;&lt;/p&gt;
+<feed xmlns="http://www.w3.org/2005/Atom"><title>Laura Lindzey</title><link href="/" rel="alternate"></link><link href="/feeds/posts.atom.xml" rel="self"></link><id>/</id><updated>2020-01-03T00:00:00-06:00</updated><entry><title>At Sea With Sentry</title><link href="/blog/2020/01/03/sentry-watchstanding/" rel="alternate"></link><updated>2020-01-03T00:00:00-06:00</updated><author><name>Laura Lindzey</name></author><id>tag:,2020-01-03:blog/2020/01/03/sentry-watchstanding/</id><summary type="html">&lt;div class="figure"&gt;
+  &lt;img class="center" alt="Sentry being recovered after a dive" src="/images/sentry_watchstanding/sentry_recovery.jpg" style="width: 100%; max-width:600px; height: auto"&gt;
+  &lt;p class="caption"&gt;
+  Sentry being brought back on board the Atlantis after a dive
+&lt;/p&gt;
+&lt;/div&gt;
+
+&lt;p&gt;I'm a software engineer in the Deep Submergence Lab at WHOI, and I'm currently 
+at sea with Sentry, a robot whose primary mission is to map the ocean floor.
+So, what do I do when at sea? And why are they sending software engineers out 
+for operations?&lt;/p&gt;
+
+
+&lt;p&gt;At sea, my job usually includes:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Prepping the vehicle for launch (we have an extensive checklist, built up 
+out of years of mistakes)&lt;/li&gt;
+&lt;li&gt;Standing watch while the robot is in the water. Depending on the cruise and 
+dive cadence, this will be a 2-5 hour shift daily. &lt;/li&gt;
+&lt;li&gt;Processing the data for the scientists after the robot is recovered&lt;/li&gt;
+&lt;li&gt;Debugging and fixing anything that goes wrong.&lt;/li&gt;
+&lt;li&gt;Using time when sentry is on the deck and during ascents to test new 
+capabilities (we do a lot in simulation, but don’t have a full hardware testbed) &lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;&lt;strong&gt;First -- what is Sentry, and what does it do?&lt;/strong&gt;&lt;/p&gt;
+&lt;div class="figure"&gt;
+  &lt;img class="center" alt="CAD drawing of Sentry" src="/images/sentry_watchstanding/sentry_internals_annotated.png" style="width: 100%; max-width:600px; height: auto"&gt;
+  &lt;p class="caption"&gt;
+  Rendering of Sentry without the skins or syntactic foam, with components mentioned in this post labeled. The Battery Housing has also been omitted for clarity. Thanks to Manyu Belani for the base image.
+
+&lt;/p&gt;&lt;/div&gt;
+
+&lt;p&gt;The original motivation for developing Sentry and adding it to the National Deep Submergence Facility was to create multibeam maps of the sea floor at night for Alvin (a manned submersible) to use the following day during its dive. 
+Of course, once you have a robot with the basic capability to follow a given path, scientists will come up with plenty of other uses for it. 
+So, in addition to multibeam grids, we do a lot of photo surveys, which require swimming ~5 meters above the ocean floor, sometimes in pretty rough terrain.&lt;/p&gt;
+&lt;div class="figure"&gt;
+  &lt;img class="center" alt="Multibeam map" src="/images/sentry_watchstanding/sentry505_mb_processing.jpg" style="width: 100%; max-width:600px; height: auto"&gt;
+  &lt;p class="caption"&gt;
+Multibeam data collected on dive sentry505 on the 2018-cordes cruise. This screencap was taken during post-processing using mbsystem. Black lines show the path Sentry swam, and the resulting topography is hillshaded. You can see some minor alignment errors where the multibeam swaths overlap that are corrected with further processing.
+
+&lt;/p&gt;&lt;/div&gt;
+
+&lt;p&gt;Plenty of robots can handle smooth terrain -- Sentry’s real strength is in steeper / rougher terrain where its actuated fins allow it to maintain control while slowing down and climbing to a much greater extent than a torpedo-style AUV could. &lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;What does a typical mission look like?&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;Sentry's unique control scheme means that propelling itself to the bottom like torpedo-shaped AUVs typically do by swimming in a circle would burn up a lot of battery power. 
+Since mission length is primarily limited by the batteries, that's no good. 
+It would also be slow. 
+Instead, we launch Sentry with “descent weights" that make it negatively buoyant, so it descends at ~0.6m/s. Once it detects the sea floor with one of its sonars, it drops the descent weights and becomes neutrally buoyant. 
+It then spends 8-20+ hours swimming pre-programmed survey lines. 
+At the end of the dive, it drops the ascent weights and floats to the surface at ~1m/s.
+This is the same speed as a leisurely stroll -- ascent and descent can each take well over an hour in deeper water.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Wait. Isn't Sentry autonomous? Why do humans need to monitor it?&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;Even if a dive goes perfectly, we will have human interaction twice: first to correct the robot's position estimate and once to tell it to drop the ascent weights.&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;Initial Shift&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;When Sentry is at the surface, it know where it is using GPS. 
+However, this isn’t used in the control loop — we just tell it where the start of the survey is, and it assumes that it has been dropped exactly there.&lt;/p&gt;
+&lt;p&gt;Once within ~100m of the ocean floor, Sentry’s DVL&lt;sup id="sf-sentry-watchstanding-1-back"&gt;&lt;a title=' Doppler Velocity Logger — this instrument has 4 sonar beams angled out, and by using the doppler shift of each beam and assuming that whatever surface is generating a return is also stationary, you can compute the 3D velocity of the robot. This is similar to how "radar guns" are able to detect speeding vehicles. ' class="simple-footnote" href="#sf-sentry-watchstanding-1"&gt;1&lt;/a&gt;&lt;/sup&gt; is able to make observations of Sentry’s relative velocity. Combined with pressure/depth data and INS accelerations / orientation, a simple kalman filter can estimate Sentry’s position relative to wherever the dive started. &lt;/p&gt;
+&lt;p&gt;However, when Sentry is in the middle of the water column, there aren’t any good sensor inputs for it to estimate its position: double-integrating accelerations is noisy and diverges quickly. So, its onboard code just assumes that it doesn’t drift at all. (Hah.) &lt;/p&gt;
+&lt;p&gt;Whenever it gets to the bottom, the operator can compute how much it drifted by using the Ship’s USBL to get Sentry’s position relative to the ship and comparing that to where Sentry thinks it is.&lt;/p&gt;
+&lt;div class="figure"&gt;
+  &lt;img class="center" alt="navg3 operator interface" src="/images/sentry_watchstanding/navg3.png" style="width: 100%; max-width:600px; height: auto"&gt;
+  &lt;p class="caption"&gt;
+“navg3” interface, displaying the local bathymetry (contour lines) the ship’s current position (magenta polygon), Sentry’s position (yellow robot), the commanded path (red/green lines), and where Sentry has actually traveled (grey dots)
+&lt;/p&gt;
+&lt;/div&gt;
+
+&lt;p&gt;The surveys are designed with a few ninety degree turns at the start, since observing a corner in sentry’s path makes it easy to compute the offset.
+That offset is then manually entered and acoustically transmitted to sentry, allowing us to follow tracklines to ~10m accuracy, rather than swimming the pre-planned survey offset by up to hundreds of meters.&lt;/p&gt;
+&lt;p&gt;Yes, it is theoretically possible to send the USBL fixes down and have Sentry update its own shift. 
+This is definitely on the wishlist, but we have limited developer time and money. 
+However, it's also more complicated than you might think. 
+The USBL fix jumps around, which means that the resulting position estimate can jump. (This is also a common problem for autonomous ground vehicles, where the GPS positions jump but you want control to be smooth and relative to what the sensors see.)
+Overcorrecting to a jumpy position estimate isn't good for a survey, where it is more important to swim a grid pattern with even coverage than it is for the lines to be exactly at a given coordinate. 
+We also sometimes re-purpose the shift to move Sentry out of the way of other assets that are in the water.&lt;sup id="sf-sentry-watchstanding-2-back"&gt;&lt;a title=" We don't have a good way to send updated plans to Sentry during a dive; however, updating the offset allows us to arbitrarily translate the existing survey geometry.[\ref]" class="simple-footnote" href="#sf-sentry-watchstanding-2"&gt;2&lt;/a&gt;&lt;/sup&gt;&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;Terminating the dive&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;Second, it's best for everybody if Sentry stays on the bottom until the boat is ready to recover it. 
+So, we want to manually trigger the ascent if at all possible. 
+It's safer down there -- once on the surface, Sentry is subject to currents, waves (wear-and tear on mechanical parts) and could get run over by another ship. 
+Plus, all of our acoustic communications stop working when Sentry is bobbing at the surface with the transducers out of the water. 
+At that point, we are limited to receiving text messages with its GPS coordinates via Iridium, a radio beacon that the ship can detect to get a bearing, visual strobes, and a short-range freewave radio (useful within a few hundred meters to joystick Sentry into position for recovery). &lt;/p&gt;
+&lt;p&gt;Sentry would cost millions to replace and there's only one, so we really want it to come back. So, we have MANY ways for sentry to decide to drop its weights and return to the surface:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;The operator uses the acoustic modem to send that is processed through the software stack, causing the cams to open and drop the weights. This is the preferred method.&lt;/li&gt;
+&lt;li&gt;The operator uses a separate transducer to send an acoustic command to the XRs/LBL transponders. On the vehicle, they are entirely self contained, running on internal battery power, and have direct control over both the cams and the burnwires.&lt;sup id="sf-sentry-watchstanding-3-back"&gt;&lt;a title=" The primary release is a cam that turns to release the weight, and the second is a burnwire, which corrodes when current is run through it. " class="simple-footnote" href="#sf-sentry-watchstanding-3"&gt;3&lt;/a&gt;&lt;/sup&gt; The transponders themselves are also redundant -- there are two of them (one listens at 14kHz and the other at 10.5kHz), and each controls the motor to one ascent weight and the burnwire to the other. So, if one fails (or the acoustic conditions aren't favorable for its frequency) the other is sufficient to drop both weights.&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Something goes wrong in the mission, triggering an abort in software: &lt;/p&gt;
+&lt;p&gt;a. If battery percentage goes below 9% the weights will be released. Some battery power is kept in reserve for the ascent and for driving on the surface so we can remote control it into position to be snagged by the ship. &lt;/p&gt;
+&lt;p&gt;b. Similarly, if a critical process dies, the vehicle will abort.&lt;/p&gt;
+&lt;p&gt;c. If Sentry completes its mission and runs out of track lines, it aborts. This means that missions are always designed to have a holding pattern at the end, giving us a buffer of when to start the recovery.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;The abort timer runs out. Even if the entire computing stack has died, preventing the above methods from working, the XRs have a countdown after which they will release the weights.&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;&lt;em&gt;Logistics / Coordination&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;Sentry’s watchstander is also the point person for any ship operations that could affect Sentry. This type of thing will have been negotiated beforehand with the expedition leader, but the EL won’t always be awake at the time, and somebody has to be awake to answer questions about whether ship activities will cause an issue for Sentry. &lt;/p&gt;
+&lt;p&gt;Our main priorities are to not have Sentry run into anything else (we’re generally OK with ~200m horizontal separation, or 100m vertical) and to ensure that we have good enough tracking with the ship’s USBL to “renavigate” the dive data to precisely localize it. These interactions might include:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;When performing joint operations with multiple assets in the water, we might use a shift command to avoid Jason’s work site, if the surveys are close together. (Jason is a tethered ROV that is often also operated off the Atlantis)&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;On one dive, the scientists wanted to do a CTD cast right in the middle of our survey area, which had to be timed precisely to avoid a potential collision. This was actually really cool — they used chemical data from Sentry's previous dive to precisely target the plume from a subsea vent, while Sentry was performing a lower-altitude camera survey in the same area.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Dumping slops buckets. Kitchen scraps have to be dumped far away from Alvin’s dive site to avoid attracting sharks. The bridge will coordinate with us to minimize the impact on our USBL tracking while still transiting far enough away to dump them.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;In order to maximize science accomplished per ship hour, the chief scientist may want to move Atlantis outside of range of Sentry comms.&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;em&gt;Failure handling&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;Having humans in the loop results in a more robust system than you could have if all failure handling was required to be autonomous. It would be more satisfying from a robotics point of view if it could handle all failures on its own, but we only have one robot, and it has only done 550 dives (which is a lot for a platform like this!) so we're still discovering new failure modes. And detecting them all is a much harder problem. So, here are some examples of human interventions:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;On one dive, a corrupted bit in a sensor reading caused Sentry’s position estimate to go unstable, which led to Sentry running away. The watchstander was able to recognize this and intervene.&lt;/li&gt;
+&lt;li&gt;On another dive, we could see that Sentry was struggling to maintain the programmed altitude with a forward speed of 1 m/s, so we lowered the commanded speed (thus switching it to a different control scheme), after which it was able to follow the planned tracks. it only finished part of the mission thanks to the reduced speed, but that's better than none, and far better than waking up the ship's crew to recover Sentry in the middle of the night. When we recovered Sentry, we discovered that one of the fin servos had failed, which was causing the control issues. &lt;/li&gt;
+&lt;li&gt;Our bottom-detection algorithm for deciding when to drop weights at the start of a dive is very very simple, and sometimes triggers due to noisy DVL data (this has been happening a lot this cruise.) However,it is definitely better to drop the descent weight too early than to plow into the bottom at 1 meter per second. After dropping weights, Sentry will transition into a bottom-following mode, but that mode struggles when it doesn’t have good altitude data, because it can’t always figure out whether the sensor is failing to provide data because its too close to the ground or too far away. On a descent, the operator knows that the robot needs to dive deeper, so we can send an override command telling the bottom follower to drive down.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;&lt;strong&gt;Cool! But how did you know that there was a problem in the first place? How can you communicate with something that's under up to 6km of water?&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;Acoustics!&lt;/p&gt;
+&lt;p&gt;Underwater, you're pretty much limited to sound waves. Under perfect conditions, you might get a few hundred meters with visible light. GPS and Radio frequencies are much worse -- the conductivity of sea water mean that they attenuate within meters.
+So, we have a number of different acoustic instruments used for tracking and talking with Sentry. &lt;/p&gt;
+&lt;p&gt;&lt;em&gt;USBL&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;The ultra short baseline (USBL) system is a commercial product that is permanently installed on Atlantis. A pole is deployed sticking through the hull (to get the transducers farther from any noise on the ship), and limits our speed to ~3 knots. Any assets that go in the water have a beacon attached, and the big head is able to get bearing and range to those beacons. &lt;/p&gt;
+&lt;div class="figure"&gt;
+  &lt;img class="center" alt="Ranger2 GUI" src="/images/sentry_watchstanding/Ranger2.png" style="width: 100%; max-width:600px; height: auto"&gt;
+  &lt;p class="caption"&gt;
+The Ranger2 GUI that is used for interacting with Atlantis's USBL. The ship’s position is at the center of the concentric circles, while Sentry’s beacon is marked with a green cross. The fading trail of green dots shows Sentry's past positions. 
+&lt;/p&gt;
+&lt;/div&gt;
+
+&lt;p&gt;This system is used for tracking Sentry; Atlantis has a display in the bridge, and the mate on watch will use it to stay close. We also use the positions reported by the USBL to post-process Sentry’s navigation estimates. This provides a big improvement in how well we can localize the scientific data -- there’s no GPS underwater, and dead-reckoning drifts over time.&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;SMS&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;The Avtrak USBL system also includes the ability to send short “SMS” message to the vehicle. We are limited to 64 ascii characters, and there is some awkward buffering at either end.&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;Whifflenav&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;I have no idea where this whimsical name came from. It’s a legacy set of hardware that used to be used in long base line navigation: they would put beacons on the sea floor, and a robot could estimate its location by calculating ranges to multiple beacons. Now we have two independent beacons on the robot and they’re used to obtain the two-way travel time between the ship and the robot.&lt;/p&gt;
+&lt;div class="figure"&gt;
+  &lt;img class="center" alt="Whifflenav GUI" src="/images/sentry_watchstanding/whiffle_back_and_forth.png" style="width: 100%; max-width:600px; height: auto"&gt;
+  &lt;p class="caption"&gt;
+Plot showing intensities from the whifflenav transducer at 13kHz. Horizontal axis is time, and vertical is effectively range (it’s also time-since-ping, which becomes range after adjusting for the speed of sound in water). In this image, Sentry has been swimming back and forth -- you can see the turns when the line’s slope changes. In this region the ocean floor is very hard and rough, so in addition to the direct return from Sentry's beacon there are multipath effects (energy that traveled Sentry -&amp;gt; ocean floor -&amp;gt; Atlantis) that show up as a trail of reflections beneath/after Sentry’s sharp return.
+&lt;/p&gt;
+&lt;/div&gt;
+
+&lt;p&gt;The Whifflenav has the longest range of any of our acoustic instruments, and on dives where Sentry travels far from the ship, watchstanding can devolve into making sure that the observed ranges have inflection points corresponding to turns in the dive plan.&lt;/p&gt;
+&lt;p&gt;The XRs are NOT used for communicating with the robot; historically, they were used to send a few bytes of information, but now, the only command they respond to is to abort the mission.&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;Micromodem&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;The Micromodem provides our highest bandwidth acoustic communications with Sentry. It has a shorter maximum range than the XRs, but this cruise, we’ve been getting micromodem messages from Sentry at ranges up to 9.5 km!&lt;/p&gt;
+&lt;p&gt;Every minute on the minute, Sentry will send an update with basic information including its depth, altitude, heading, speed, and where it thinks it is. In addition, we have a number of “queues” that we can request, which have been hand-tuned to pack relevant information into a 64 byte message. For example, if sentry’s reported altitudes suggest control issues, we can request the status of its actuators. Or, at the start of a big camera survey, we might double-check that the frame count is incrementing to verify that the camera turned on and is working.&lt;/p&gt;
+&lt;div class="figure"&gt;
+  &lt;img class="center" alt="Sentrysitter GUI" src="/images/sentry_watchstanding/sentrysitter_gui.png" style="width: 100%; max-width:600px; height: auto"&gt;
+  &lt;p class="caption"&gt;
+Sentrysitter GUI. The radio buttons at the bottom are populated by the acoustic messages from Sentry, and the controls at the top are for transmitting additional commands.
+&lt;/p&gt;
+&lt;/div&gt;
+
+&lt;p&gt;The micromodem hardware is capable of sending significantly more information than this — at maximum data rates, it can encode ~2048 bytes in a ~15 second long transmission. My major project at the moment is developing the software support to make better use of all that unused bandwidth. &lt;/p&gt;
+&lt;div class="figure"&gt;
+  &lt;img class="center" alt="Watching movies while on watch" src="/images/sentry_watchstanding/Watchstanding.jpg" style="width: 100%; max-width:600px; height: auto"&gt;
+  &lt;p class="caption"&gt;
+Watchstanding is a great time to catch up on media consumption!
+&lt;/p&gt;
+&lt;/div&gt;&lt;ol class="simple-footnotes"&gt;&lt;li id="sf-sentry-watchstanding-1"&gt;
+Doppler Velocity Logger — this instrument has 4 sonar beams angled out, and by using the doppler shift of each beam and assuming that whatever surface is generating a return is also stationary, you can compute the 3D velocity of the robot. This is similar to how "radar guns" are able to detect speeding vehicles.
+ &lt;a class="simple-footnote-back" href="#sf-sentry-watchstanding-1-back"&gt;↩&lt;/a&gt;&lt;/li&gt;&lt;li id="sf-sentry-watchstanding-2"&gt;
+We don't have a good way to send updated plans to Sentry during a dive; however, updating the offset allows us to arbitrarily translate the existing survey geometry.[\ref] &lt;a class="simple-footnote-back" href="#sf-sentry-watchstanding-2-back"&gt;↩&lt;/a&gt;&lt;/li&gt;&lt;li id="sf-sentry-watchstanding-3"&gt;
+The primary release is a cam that turns to release the weight, and the second is a burnwire, which corrodes when current is run through it.
+ &lt;a class="simple-footnote-back" href="#sf-sentry-watchstanding-3-back"&gt;↩&lt;/a&gt;&lt;/li&gt;&lt;/ol&gt;</summary></entry><entry><title>Origami Butterfly: Adventures with Flexible PCB</title><link href="/blog/2019/11/26/origami-butterfly/" rel="alternate"></link><updated>2019-11-26T00:00:00-06:00</updated><author><name>Laura Lindzey</name></author><id>tag:,2019-11-26:blog/2019/11/26/origami-butterfly/</id><summary type="html">&lt;div class="figure"&gt;
+  &lt;img class="center" alt="Assorted origami butterflies" src="/images/origami_butterfly_pcb/butterfly_evolution.jpg" style="width: 100%; max-width: 600px; height: auto"&gt;
+  &lt;p class="caption"&gt;
+  A very partial set of butterfly and flower prototypes. It turns out that origami butterflies have a natural predator in housecats, and I found ripped-apart wings all over the place.
+  
+&lt;/p&gt;&lt;/div&gt;
+
+&lt;p&gt;As soon as I learned that I could order flexible PCBs, I knew I wanted to play with designing “origami circuits”, where the board itself is folded and soldered into a sculpture.
+A PCB exchange organized by a group of &lt;a href="https://boldport.com/"&gt;Boldport Club&lt;/a&gt; members gave me the perfect excuse to iterate on a concept and ship it out to an appreciative audience.
+My goal for this post is to answer some of past-Laura’s questions about what working with flexible PCB is like (OK, OK, and to show off the final product…)&lt;/p&gt;
+
+
+&lt;p&gt;The origami butterfly that I learned as a child&lt;sup id="sf-origami-butterfly-1-back"&gt;&lt;a title=" Googling suggests that this is a slight variation on the classic Yoshizawa butterfly " class="simple-footnote" href="#sf-origami-butterfly-1"&gt;1&lt;/a&gt;&lt;/sup&gt; seemed like a simple enough fold pattern to be a good candidate. But what should I design a circuit to do? And how should I power it? While I could have attached a coin cell battery, that seemed clunky. Butterflies don’t need weights!&lt;/p&gt;
+&lt;div class="figure"&gt;
+  &lt;img class="center" alt="Schematic for the butterfly's circuit" src="/images/origami_butterfly_pcb/butterfly_schematic.png" style="width: 100%; max-width: 600px; height: auto"&gt;
+  &lt;p class="caption"&gt;
+  Schematic for the butterfly’s circuit, laid out in KiCAD
+  
+&lt;/p&gt;&lt;/div&gt;
+
+&lt;p&gt;Brainstorming with my partner, we came up with the idea of a “power flower”, where the butterfly would alight to get power.
+I realized that if I made the butterfly’s legs out of diodes&lt;sup id="sf-origami-butterfly-2-back"&gt;&lt;a title=" I took this idea from all of the absolutely awesome Boldport insects that have legs made out of resistors. " class="simple-footnote" href="#sf-origami-butterfly-2"&gt;2&lt;/a&gt;&lt;/sup&gt;, they could be arranged in a way that it doesn’t matter which legs land on positive/negative pads, so long as at least one of each is contacted and there aren’t any shorts.
+With that interaction, I didn’t think it needed any cooler circuit than to just light up when on the flower, so I was all set for a concept!&lt;/p&gt;
+&lt;p&gt;I prototyped a LOT with pen on paper.
+How big (and thus $$) did the board really need to be? How should I route traces?
+What looked good for LED layout? For laying out the actual PCB, I used &lt;a href="http://www.kicad-pcb.org/"&gt;KiCad&lt;/a&gt;, manually adjusting footprint locations and fold pattern guidelines based on my prototypes.
+The trickiest bit was making sure that all of the holes and pads aligned when folded.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Material Properties&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;When I was designing the first PCB prototype, I had no idea how well the flexible material would take a crease, which is more than a little important for origami.&lt;/p&gt;
+&lt;p&gt;I went with single layer 0.1mm boards&lt;sup id="sf-origami-butterfly-3-back"&gt;&lt;a title=" If I was willing to use black or yellow coverlay, I could have gone thinner (0.08mm), but I thought a white butterfly would be prettier. " class="simple-footnote" href="#sf-origami-butterfly-3"&gt;3&lt;/a&gt;&lt;/sup&gt; with white coverlay&lt;sup id="sf-origami-butterfly-4-back"&gt;&lt;a title=" Coverlay serves the same purpose as solder mask and is usually used for flexible PCBs because it doesn't crack when bent. It is a sheet of polyimide that is adhered to the circuit, which imposes additional constraints on design (e.g. the coverlay must be a contiguous layer, you need to design in additional clearance for the adhesive to squeeze out around pads, there is a larger minimum dam size) " class="simple-footnote" href="#sf-origami-butterfly-4"&gt;4&lt;/a&gt;&lt;/sup&gt;, ordered from PCBWay.
+According to my calipers, my printer paper is ~0.09 mm thick, and I have no trouble folding it, so I figured that at least the thickness wouldn’t be the issue.&lt;/p&gt;
+&lt;div class="figure"&gt;
+  &lt;img class="center" alt="Photo of three origami butterflies, folded using origami paper, printer paper, and flexible PCB" src="/images/origami_butterfly_pcb/paper_comparison.jpg" style="width: 100%; max-width: 600px; height: auto"&gt;
+  &lt;p class="caption"&gt;
+Comparison of butterfly with different materials. Origami paper (left) keeps the final shape nicely, and printer paper (center) is barely worse. The PCB butterfly (right) wants to spring apart; via and pad placement will allow solder to hold it together.
+  
+&lt;/p&gt;&lt;/div&gt;
+
+&lt;p&gt;On its own, the polyimide is significantly thinner than the polyimide+coverlay combo.
+Additionally, it seems to hold a crease a bit better. (The coverlay makes it springier.)
+So, on V3, I tried to remove coverlay from as many creases as possible.&lt;/p&gt;
+&lt;p&gt;But what about brittleness? It turned out that I was a lot more worried about this than necessary:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;V1 and V3 included creases over regions of only polyimide, and I haven’t yet observed cracking there.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;/p&gt;&lt;div class="figure"&gt;
+   &lt;img alt="" src="/images/origami_butterfly_pcb/cracking.jpg" style="width: 25%; max-width: 300px; height: auto; float: right; margin-left: 20px"&gt;
+  &lt;p&gt;
+I have had cracking around the butterfly’s head, at the boundary of a polyamide+copper+gold / polyimide+coverlay region. This is almost undetectable on the final assembled butterfly. I have not experimented to see if this is more due to the edge of the copper pour or due to the tightness of that crease.
+&lt;/p&gt;
+&lt;/div&gt;&lt;p&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;That’s not to say that it’s EASY to fold this stuff…it’s slippery and springy.&lt;/p&gt;
+&lt;div class="figure"&gt;
+  &lt;img height="auto" src="/images/origami_butterfly_pcb/assembly_quadhands.jpg" width="55%" alt="Using quadhands to hold the butterfly while attaching legs."&gt;
+  &lt;img height="auto" src="/images/origami_butterfly_pcb/assembly_binderclip.jpg" width="43%" alt="Using a binderclip to help train the wing creases."&gt;
+  &lt;p class="caption"&gt;
+  Assembling the butterfly...(left) Using quadhands to hold the butterfly while attaching legs. (right) Using a binderclip to help make the wing creases crisper.
+  &lt;/p&gt;
+&lt;/div&gt;
+
+&lt;p&gt;I strongly recommend having helping hands (or quadhands), paperclips, and binderclips handy.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Design rules for flexible PCBs?&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;As a hobbyist, I found design guidelines for flexible PCB to be opaque to non-existent.
+This is in contrast to the standard FR4 boards where various fabs clearly publish their capabilities.&lt;sup id="sf-origami-butterfly-5-back"&gt;&lt;a title=" e.g. Oshpark's two-layer specs, Elecrow's specs " class="simple-footnote" href="#sf-origami-butterfly-5"&gt;5&lt;/a&gt;&lt;/sup&gt; Based on my obsessive googling before eventually deciding to just jump in with an order:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href="https://docs.oshpark.com/services/flex/"&gt;Oshpark states that they use soldermask rather than coverlay&lt;/a&gt; on their flexi boards because their customers don’t typically have the tools to design a board that’s suitable for coverlay. (But what are the constraints?) Additionally, they couldn’t do purple soldermask because it was too brittle and cracked on flex.&lt;/li&gt;
+&lt;li&gt;Somewhere I found the hint that coverlay can’t handle super thin lines separating pads, so for a small-enough IC, you’d have to design a rectangle masking out all of the pads, rather than individual masks per pad. I also found the info that you want the mask boundary to be larger for coverlay than for soldermask because the adhesive will be squeezed out. (But how much larger?)&lt;/li&gt;
+&lt;li&gt;There’s lots of guidance that traces shouldn’t be routed across bends, but I couldn’t find information on exactly how bad it is / ideal curvature radii / repeated vs. static bends. Let’s just say that the one bend I have a trace going over is significantly smaller than any static radius I found mooted as OK, and routing over a sharp fold would be 5-10x smaller radius.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;So … if you have a better guide for what’s possible to fabricate in the typical flexible PCB process, please let me know!
+Fortunately/unfortunately, I suspect that best practices for reliability in the face of flexing are going to assume many more 9’s of reliability than I care about.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Routing Traces&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;For the project I had in mind, a critical component of the design was how to route traces between different facets of the origami butterfly.
+The generally-agreed-upon guidance to not route traces across sharp folds made me cautious, so I tried to design a more reliable way to connect the power source on the body with the LEDs on the wings.&lt;/p&gt;
+&lt;div class="figure"&gt;
+  &lt;img alt="Photo of via-equivalent connecting three different layers." src="/images/origami_butterfly_pcb/solder_via.jpg" style="width: 35%; max-width: 300px; height: auto; float: right; margin-left: 20px"&gt;
+  &lt;p&gt;
+  V1 made liberal use of via-equivalents.
+In the same way that a via connects a trace on two layers of a board, I placed through-hole footprints in two locations on the board that would overlap when the PCB was folded, and used solder blobs on both pads to form an electrical connection.
+In some cases, I added a third layer of connectivity using an exposed pad.
+&lt;/p&gt;
+&lt;/div&gt;
+
+&lt;p&gt;This … worked. It was also incredibly fiddly to assemble. Lessons:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Aligning all three layers is hard. I could reliably get 2, but getting the connection with the 3rd was flaky and led to lots of debugging with a multimeter.&lt;/li&gt;
+&lt;li&gt;It is stupidly easy to lift pads on a flexi board when re-working. Be careful with overheating!!&lt;/li&gt;
+&lt;li&gt;It would have been easier if it was a two-layer board, so there was metal on both sides of the through-holes. It might have been possible to order it with a very minimal, metal-only back layer...&lt;/li&gt;
+&lt;li&gt;Polyimide is an impressive thermal insulator. If you’re careful, your finger can be separated from the iron by 2-3 layers of it and not get burned immediately (it does heat up after a few seconds). This is useful when trying to get as-flat-as-possible joins.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Watching somebody else assemble my board, I realized that a better option was to use exposed pads on the edges of folds to connect multiple layers.&lt;/p&gt;
+&lt;p&gt;This was a dramatic simplification of the design, making it much more forgiving of less-precise folds AND requiring fewer solder joints. Phew.&lt;/p&gt;
+&lt;p&gt;I possibly could have designed this in a way that didn’t have any solder jumpers between facets, but … they wound up having structural benefit as well, since the flexi pcb wants to unfold if it isn’t soldered together.&lt;/p&gt;
+&lt;div class="figure"&gt;
+&lt;img alt="photo of pad ripped off PCB" src="/images/origami_butterfly_pcb/ripped_off_pad.jpg" style="width: 50%; max-width: 300px; height: auto; float: right; margin-left: 20px"&gt;
+&lt;/div&gt;
+
+&lt;p&gt;Finally, the traces connecting the two halves of the butterfly seem to be robust enough to folding that the solder blobs providing that connection are redundant. I don’t have many data points yet, but my data does suggest that pads are more likely to rip off due to bending than a trace (with coverlay over) is to fail at a crease. The pads for the legs were also mechanically fragile.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Fabrication Process&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;Ultimately, when my obsessive googling didn’t yield firm guidance, and my chosen fab’s&lt;sup id="sf-origami-butterfly-6-back"&gt;&lt;a title=" I went with PCBWay, for purely economical reasons. And because I figured if these awesome magnetic actuators were ordered from them, then they couldn't be too bad. " class="simple-footnote" href="#sf-origami-butterfly-6"&gt;6&lt;/a&gt;&lt;/sup&gt; website didn’t seem to have anything useful in English, I went with the approach of “submit my gerbers, and hope for feedback”. This worked … mostly.&lt;/p&gt;
+&lt;div class="figure"&gt;
+&lt;img src="/images/origami_butterfly_pcb/tracespace_origami_butterfly_v1.png" width="31.5%" alt=""&gt;
+&lt;img src="/images/origami_butterfly_pcb/photo_board_bottom_v1.jpg" width="33%" alt=""&gt;
+&lt;img src="/images/origami_butterfly_pcb/photo_board_top_v1.jpg" width="33%" alt=""&gt;
+&lt;p class="caption"&gt;
+Version 1 of the butterfly PCB. Left: single-layer design as rendered by &lt;a href="https://tracespace.io/view/"&gt;tracespace&lt;/a&gt;; Center: Top of board, as fabricated; Right: bottom of board, as fabricated
+&lt;/p&gt;
+&lt;/div&gt;
+
+&lt;p&gt;For V1 of the design, my gerbers were fabbed as submitted, and everybody was happy. Well, everybody who didn’t try to assemble one. I paid PCBWay $113 for 10 copies of the 125x125mm boards + shipping.&lt;/p&gt;
+&lt;p&gt;For V2, I was more adventurous with the coverlay mask, and what I submitted first wasn’t feasible to fab. Instead of notifying me of this, PCBWay made several changes to my design without telling me, then sent me the boards. I paid $232 for 20 boards + shipping + a newly-added CC charge.&lt;/p&gt;
+&lt;div class="figure"&gt;
+&lt;img src="/images/origami_butterfly_pcb/tracespace_origami_butterfly_v2.png" width="31.5%" alt=""&gt;
+&lt;img src="/images/origami_butterfly_pcb/photo_board_bottom_v2.jpg" width="33%" alt=""&gt;
+&lt;img src="/images/origami_butterfly_pcb/photo_board_top_v2.jpg" width="33%" alt=""&gt;
+&lt;p class="caption"&gt;
+Version 2 of the butterfly PCB. Left: single-layer design as rendered by &lt;a href="https://tracespace.io/view/"&gt;tracespace&lt;/a&gt;; Center: Top of board, as fabricated; Right: bottom of board, as fabricated
+&lt;/p&gt;
+&lt;/div&gt;
+
+&lt;p&gt;Uh-oh. All of the carefully-drawn masks on the creases were ignored.
+(They also moved/resized some of the silkscreen around pads and in the LED footprints.)&lt;/p&gt;
+&lt;p&gt;When I emailed them to ask what had happened and how to fix it, they were willing to re-do my order, for the price of shipping.
+I still don’t have a super clear idea of what all is (im)possible, and there was a little bit of a language barrier.
+Thankfully, their customer service rep’s English is better than my almost nonexistent Mandarin.
+They shared the following images and guidance:&lt;/p&gt;
+&lt;div class="figure"&gt;
+  &lt;img class="center" alt="Suggested layout provided by PCBWay" src="/images/origami_butterfly_pcb/PCBWay_suggestion.jpg" style="width: 45%; max-width: 600px; height: auto"&gt;
+  &lt;p class="caption"&gt;
+PCBWay’s suggestion for where it was feasible to put coverlay mask. Triangle/circle/rectangle are component footprints, lines are the mask.
+  
+&lt;/p&gt;&lt;/div&gt;
+
+&lt;blockquote&gt;
+&lt;p&gt;As for flexible PCB, is it impossible the produce soldermask opening as line, that will separate the whole PCB but coverlay of fleixble PCB shoule be in a unit and can not separate by line.&lt;/p&gt;
+&lt;p&gt;For attached pictures, our engineer designed 0.2MM width slots in section and leave at least 8-10MM space between slots. Is this design OK for you?&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;It really helped that they sent me suggested modifications to my layout; while not quite suitable for my goals, their suggested layout gave me ideas about what was possible. (Lesson: communicate with pictures!)&lt;/p&gt;
+&lt;div class="figure"&gt;
+&lt;img src="/images/origami_butterfly_pcb/tracespace_origami_butterfly_v3.png" width="31.5%" alt=""&gt;
+&lt;img src="/images/origami_butterfly_pcb/photo_board_bottom_v3.jpg" width="33%" alt=""&gt;
+&lt;img src="/images/origami_butterfly_pcb/photo_board_top_v3.jpg" width="33%" alt=""&gt;
+&lt;p class="caption"&gt;
+Version 3 of the butterfly PCB. Left: single-layer design as rendered by &lt;a href="https://tracespace.io/view/"&gt;tracespace&lt;/a&gt;; Center: Top of board, as fabricated; Right: bottom of board, as fabricated
+&lt;/p&gt;
+&lt;/div&gt;
+
+&lt;p&gt;I sent back another draft of the layout, and asked if it could be fabricated without modification. This time, it was successful! I paid $26 for shipping.&lt;/p&gt;
+&lt;p&gt;I’m happy with the quality and customer service I received from &lt;a href="https://www.pcbway.com/"&gt;PCBWay&lt;/a&gt;, and plan to order from them again.&lt;/p&gt;
+&lt;p&gt;However, it wasn’t perfect ...&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;div class="figure"&gt;
+   &lt;img alt="Picture showing the dirty edge of a pcb" src="/images/origami_butterfly_pcb/dirty_edge.jpg" style="width: 50%; max-width: 300px; height: auto; float: right; margin-left: 20px"&gt;
+  &lt;p&gt;
+   The edges of the board have evidence of other silkscreen. I’m not sure if this was a guide for cutting, or somebody else’s design. It’s not a big problem for me, but could be an aesthetic consideration for somebody else.
+&lt;/p&gt;
+&lt;/div&gt;&lt;/li&gt;
+&lt;li&gt;&lt;div class="figure"&gt;
+   &lt;img alt="Picture showing the coverlay slot with coverlay still attached" src="/images/origami_butterfly_pcb/coverlay_slot.jpg" style="width: 30%; max-width: 300px; height: auto; float: right; margin-left: 20px"&gt;
+  &lt;p&gt;
+  One of my boards didn’t have some of the coverlay gaps removed (they were cut, but the resulting tab hadn’t been removed). I’m not at all bothered by this since I ordered 20 boards, but received 21.
+&lt;/p&gt;
+&lt;/div&gt;&lt;/li&gt;
+&lt;li&gt;&lt;div class="figure"&gt;
+   &lt;img alt="Picture showing mis-aligned silkscreen/coverlay slot" src="/images/origami_butterfly_pcb/silkscreen_alignment.jpg" style="width: 50%; max-width: 300px; height: auto; float: right; margin-left: 20px"&gt;
+  &lt;p&gt;
+  The alignment was off between the silkscreen and the slots in the coverlay.
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;br&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;strong&gt;...oh yeah, the flower&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;For a long time, I just used some copper tape to provide the landing pads to power the butterfly.
+Ugly, but effective.&lt;/p&gt;
+&lt;div class="figure"&gt;
+  &lt;img height="auto" class="center" src="/images/origami_butterfly_pcb/copper_flower.jpg" width="80%"&gt;
+  &lt;p class="caption"&gt;
+  Original flower -- made with printer paper, copper tape, and a battery held in place with a binder clip.
+  &lt;/p&gt;
+&lt;/div&gt;
+
+&lt;p&gt;Designing the PCB flower was a lot more straightforward, aside from needing to ensure that the different components actually fit together.&lt;/p&gt;
+&lt;p&gt;So, I scripted it. Hackily.&lt;/p&gt;
+&lt;p&gt;It turns out that the .kicad_pcb file is plain text with a simple syntax. A few experiments with diffing the files after adding components through the KiCAD pcbnew GUI gave me all I needed to know to write some utility functions for plopping down footprints / lines / polygons. From there, I did all of the geometry by hand and wrote functions that would add petals / leaves / centers to the layout at a given position and rotation.&lt;/p&gt;
+&lt;div class="figure"&gt;
+  &lt;img height="auto" src="/images/origami_butterfly_pcb/kicad_flower_exploded.png" width="49%"&gt;
+  &lt;img height="auto" src="/images/origami_butterfly_pcb/kicad_flower_assembled.png" width="49%"&gt;
+  &lt;p class="caption"&gt;
+  PCB layout displayed in KiCAD. Left: exploded view (with groundplanes filled), Right: stacked view.
+  &lt;/p&gt;
+&lt;/div&gt;
+
+&lt;p&gt;This made it easy to generate .kicad_pcb files with the flower both as it would be assembled and in an exploded view.
+I used the assembled view to make sure it would fit together once I ordered all the pieces, and the exploded view to check that my ground pours were correct (since kicad really doesn’t like computing ground pours in areas with overlapping edge cuts).&lt;/p&gt;
+&lt;div class="figure"&gt;
+  &lt;img height="auto" class="center" src="/images/origami_butterfly_pcb/panelized_flower.jpg" width="100%"&gt;
+  &lt;p class="caption"&gt;
+  Panelized flower components, as fabricated by Elecrow.
+  &lt;/p&gt;
+&lt;/div&gt;
+
+&lt;p&gt;Scripting also made panelization easy!&lt;/p&gt;
+&lt;p&gt;However, if I ever do something like this again, I’ll try to learn the official KiCAD API.&lt;sup id="sf-origami-butterfly-7-back"&gt;&lt;a title=" this seems like a comprehensive guide for where to start scripting kicad with python. " class="simple-footnote" href="#sf-origami-butterfly-7"&gt;7&lt;/a&gt;&lt;/sup&gt; My way was far too labor-intensive and fragile.&lt;/p&gt;
+&lt;p&gt;For standard PCBs, I use &lt;a href="https://www.elecrow.com/pcb-manufacturing.html"&gt;Elecrow&lt;/a&gt; because they don’t charge extra for panelizing, so long as all components are identical.
+They did a good job, though if you look closely you’ll see that they changed the mousebites. The petals were all from the same gerbers, but each color was handled slightly differently (black is as-ordered).&lt;/p&gt;
+&lt;p&gt;I wanted this to be easy to send by mail, so I ordered the flower parts out of 0.6mm thick PCB. It worked! I can fit everything in a standard notecard + envelope, and I haven’t had any reports of them arriving broken.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Finished!&lt;/strong&gt;&lt;/p&gt;
+&lt;div class="figure"&gt;
+  &lt;img height="auto" class="center" src="/images/origami_butterfly_pcb/butterfly_on_flower.jpg" width="100%"&gt;
+  &lt;p class="caption"&gt;
+Finished butterfly - you can mix and match LED colors, but each wing (left/right) has to have LEDs with the same voltage drop.&amp;lt;
+  &lt;/p&gt;
+&lt;/div&gt;
+
+&lt;div class="figure"&gt;
+  &lt;img height="auto" class="center" src="/images/origami_butterfly_pcb/tobin_butterfly_small.jpg" width="100%"&gt;
+  &lt;p class="caption"&gt;
+    Thanks to Tobin Yehle for being a beta-tester for assembling these and for providing this photo!
+  &lt;/p&gt;
+&lt;/div&gt;
+
+&lt;p class="thanks"&gt;
+&lt;strong&gt; Acknowledgements: &lt;/strong&gt;
+
+&lt;br&gt;
+&lt;br&gt;
+
+If you think this is cool, you should definitely check out &lt;a href="https://boldport.com/"&gt;Boldport's&lt;/a&gt; work; they were a direct inspiration in my new hobby.
+Also, I am far from the first person to play with origami circuits — &lt;a href="http://technolojie.com/stil-life-with-cranes/"&gt;Jie Qi&lt;/a&gt; and others in the &lt;a href="http://highlowtech.org/?cat=5"&gt;High Low Tech Group&lt;/a&gt; in the MIT media lab have some amazing work.
+
+&lt;br&gt;&lt;br&gt;
+
+Thanks to:
+&lt;/p&gt;&lt;ul type="disk" style="font-size:0.85em"&gt;
+&lt;li&gt; Luke Voss for being an awesome brainstorming partner at the conceptual design stage, and for attempting to assemble a V1 butterfly. Watching how painful it was, I was inspired to try a new way of connecting traces on different facets. &lt;/li&gt;
+&lt;li&gt; Boldport Club for the inspiration, and for the discord server of club members who organized this exchange. &lt;/li&gt;
+&lt;li&gt; &lt;a href="https://anniecherkaev.com/"&gt;Annie Cherkaev&lt;/a&gt; &amp;amp; &lt;a href="https://tobin.yehle.us/"&gt;Tobin Yehle&lt;/a&gt; for beta testing the V2 butterfly assembly. &lt;/li&gt;
+&lt;li&gt; Annie, Tobin, Wesley, Ben and other members of the &lt;a href="https://www.recurse.com/"&gt;Recurse Center&lt;/a&gt; remote hardware hack night who provided peer pressure to keep working through the boring bits. &lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;&lt;/p&gt;&lt;ol class="simple-footnotes"&gt;&lt;li id="sf-origami-butterfly-1"&gt;
+Googling suggests that this is a slight variation on the classic &lt;a href="https://www.origami-resource-center.com/support-files/butterfly-yoshizawa.pdf"&gt;Yoshizawa butterfly&lt;/a&gt;
+ &lt;a class="simple-footnote-back" href="#sf-origami-butterfly-1-back"&gt;↩&lt;/a&gt;&lt;/li&gt;&lt;li id="sf-origami-butterfly-2"&gt;
+I took this idea from all of the &lt;a href="https://boldport.com/shop/the-monarch"&gt;absolutely&lt;/a&gt; &lt;a href="https://boldport.com/shop/the-lady"&gt;awesome&lt;/a&gt; &lt;a href="https://boldport.com/shop/the-gent"&gt;Boldport&lt;/a&gt; &lt;a href="https://boldport.com/shop/the-conehead"&gt;insects&lt;/a&gt; that have legs made out of resistors.
+ &lt;a class="simple-footnote-back" href="#sf-origami-butterfly-2-back"&gt;↩&lt;/a&gt;&lt;/li&gt;&lt;li id="sf-origami-butterfly-3"&gt;
+If I was willing to use black or yellow coverlay, I could have gone thinner (0.08mm), but I thought a white butterfly would be prettier.
+ &lt;a class="simple-footnote-back" href="#sf-origami-butterfly-3-back"&gt;↩&lt;/a&gt;&lt;/li&gt;&lt;li id="sf-origami-butterfly-4"&gt;
+Coverlay serves the same purpose as solder mask and is usually used for flexible PCBs because it doesn't crack when bent. It is a sheet of polyimide that is adhered to the circuit, which imposes additional constraints on design (e.g. the coverlay must be a contiguous layer, you need to design in additional clearance for the adhesive to squeeze out around pads, there is a larger minimum dam size)
+ &lt;a class="simple-footnote-back" href="#sf-origami-butterfly-4-back"&gt;↩&lt;/a&gt;&lt;/li&gt;&lt;li id="sf-origami-butterfly-5"&gt;
+e.g. &lt;a href="https://docs.oshpark.com/services/two-layer/"&gt;Oshpark&lt;/a&gt;'s two-layer specs, &lt;a href="https://www.elecrow.com/pcb-manufacturing.html"&gt;Elecrow&lt;/a&gt;'s specs
+ &lt;a class="simple-footnote-back" href="#sf-origami-butterfly-5-back"&gt;↩&lt;/a&gt;&lt;/li&gt;&lt;li id="sf-origami-butterfly-6"&gt;
+I went with PCBWay, for purely economical reasons. And because I figured if &lt;a href="https://www.tindie.com/products/Microbots/flexible-pcb-actuator/"&gt;these awesome magnetic actuators&lt;/a&gt; were ordered from them, then they couldn't be too bad.
+ &lt;a class="simple-footnote-back" href="#sf-origami-butterfly-6-back"&gt;↩&lt;/a&gt;&lt;/li&gt;&lt;li id="sf-origami-butterfly-7"&gt;
+&lt;a href="https://kicad.mmccoo.com/kicad-scripting-table-of-contents/"&gt;this&lt;/a&gt; seems like a comprehensive guide for where to start scripting kicad with python.
+ &lt;a class="simple-footnote-back" href="#sf-origami-butterfly-7-back"&gt;↩&lt;/a&gt;&lt;/li&gt;&lt;/ol&gt;</summary></entry><entry><title>My First PCB!</title><link href="/blog/2019/02/09/my-first-pcb/" rel="alternate"></link><updated>2019-02-09T00:00:00-06:00</updated><author><name>Laura Lindzey</name></author><id>tag:,2019-02-09:blog/2019/02/09/my-first-pcb/</id><summary type="html">&lt;p&gt;Designing a PCB&lt;sup id="sf-my-first-pcb-1-back"&gt;&lt;a title=" A Printed Circuit Board (PCB) provides places to attach the components in your circuit (pads/footprints) and provides the required electrical connections between them (traces). " class="simple-footnote" href="#sf-my-first-pcb-1"&gt;1&lt;/a&gt;&lt;/sup&gt; and sending it off to fab is surprisingly accessible and feels like a super power.
+I’d been intimidated for years, but finally jumped in.
+Also, I love living in the future! For &amp;lt;$20, you can design a PCB, have it manufactured in a factory, and get it mailed to you.
+This still seems insane to me.&lt;/p&gt;
+&lt;p&gt;This post describes the path I took to get my first PCB manufactured, with an emphasis on not getting sucked into optimizing every decision.
+I’m assuming you already have a circuit drawn out or breadboarded&lt;sup id="sf-my-first-pcb-2-back"&gt;&lt;a title=" If you need inspiration, how about a LED that lights up when you push a button, or a LED that turns on in the dark? Or, check out the 100 simple circuits in the back of Forrest Mims's &amp;quot;Getting Started in Electronics&amp;quot;. " class="simple-footnote" href="#sf-my-first-pcb-2"&gt;2&lt;/a&gt;&lt;/sup&gt;, and you want to immortalize it.&lt;/p&gt;
+
+
+&lt;p&gt;I estimate that going from “what is KiCAD even” to ordering your first PCB could be a reasonable one-day project for a simple circuit you already have sketched or breadboarded.
+It only took me a few days because I was paying a lot of attention to the aesthetics of the board.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;My Circuit&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;While doing a mini batch at the &lt;a href="https://www.recurse.com/"&gt;Recurse Center&lt;/a&gt;, I became fascinated by the oscillator circuit&lt;sup id="sf-my-first-pcb-3-back"&gt;&lt;a title=" These are lots of websites explaining how this works. Here's a nice simulation, and here's a simpler explanation. " class="simple-footnote" href="#sf-my-first-pcb-3"&gt;3&lt;/a&gt;&lt;/sup&gt; that powered the &lt;a href="https://github.com/strickinato/recurse-christmas-pcb"&gt;RC Christmas ornaments&lt;/a&gt;.
+I love how simple the circuit is, while generating visually-interesting behavior!&lt;/p&gt;
+&lt;p&gt;&lt;img title="Hand-drawn diagram of the oscillator circuit" class="center" alt="Hand-drawn diagram of the oscillator circuit" src="/images/my_first_pcb/schematic_handdrawn.jpg" style="width: 50%; max-width: 300px; height: auto"&gt;&lt;/p&gt;
+&lt;!-- This version doesn't scale; it's just fixed. I couldn't get the liquid image tags to handle the percentage --&gt;
+
+&lt;!-- {% img /images/my_first_pcb/schematic_handdrawn.jpg 300 auto "Hand-drawn diagram of the oscillator circuit" %} --&gt;
+
+&lt;p&gt;I wanted to play with varying the frequency of the oscillator by using different values of resistors and capacitors, so I made a protoboard wired up with female header to make this easy.
+It turns out that LED color also makes a difference!
+I dislike breadboarding for anything more extended than a proof-of-concept (it is the physical incarnation of spaghetti code) and protoboard&lt;sup id="sf-my-first-pcb-4-back"&gt;&lt;a title=" I'm always frustrated by the awkward layout and the fiddly solder bridges protoboard requires. However, it's useful if you want to make a breadboarded circuit more permanent without actually making a PCB. If you have to use protoboard, I like these from gikfun because they have the same electrical connectivity as a breadboard. (Adafruit's perma-proto is also good, but more expensive.) You can't get the layout as dense as you can on other protoboard, but it cuts down on how many solder bridges you have to create. " class="simple-footnote" href="#sf-my-first-pcb-4"&gt;4&lt;/a&gt;&lt;/sup&gt; can be a pain to work with.
+So, I figured an oscillator circuit with female headers for all of the components could be a fun first PCB to have fabricated.&lt;/p&gt;
+&lt;div class="figure"&gt;
+  &lt;img height="auto" src="/images/my_first_pcb/breadboard.jpg" width="44%"&gt;
+  &lt;img height="auto" src="/images/my_first_pcb/protoboard.jpg" width="52%"&gt;
+  &lt;p class="caption"&gt;
+    Early implementations of the oscillator. Left: on breadboard, Right: on protoboard.
+  &lt;/p&gt;
+&lt;/div&gt;
+
+&lt;p&gt;&lt;strong&gt; CAD tool for PCBs &lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;I really like &lt;a href="http://kicad-pcb.org/"&gt;KiCAD&lt;/a&gt;&lt;sup id="sf-my-first-pcb-5-back"&gt;&lt;a title=" I used v4 for this project, but you should definitely use v5. They fixed a lot of the rough edges, and it's more pleasant all-around. " class="simple-footnote" href="#sf-my-first-pcb-5"&gt;5&lt;/a&gt;&lt;/sup&gt; as a design tool because it decouples documenting the circuit logically from laying it out on a board.
+This is great for when I want to have professional-ish schematics of things that I’m only ever going to implement in protoboard.
+I think &lt;a href="https://www.autodesk.com/products/eagle/overview"&gt;Eagle&lt;/a&gt; is the main competitor, but it has a tight coupling between the logical schematic and the physical layout that forced me to care about component packaging and footprints way too early (like 2 years too early), so I bailed on it quickly.&lt;/p&gt;
+&lt;p&gt;Plus, KiCAD is open-source, which makes me happy.&lt;/p&gt;
+&lt;p&gt;There are 3 primary phases to designing a PCB in KiCAD:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Use EESCHEMA to generate a &lt;a href="https://learn.sparkfun.com/tutorials/how-to-read-a-schematic/all"&gt;schematic&lt;/a&gt; for your circuit. This will be a digital version of the hand-drawn circuit from above.&lt;/li&gt;
+&lt;li&gt;Use CVPCB to associate each element in the schematic with a specific component’s footprint. For example, resistors come in many shapes and sizes, and before laying out a PCB, you need to choose which resistor to use. The footprint specifies its physical size, connections to the board, silkscreened outline, and sometimes even 3D view.&lt;/li&gt;
+&lt;li&gt;Use PCBNEW to define the board’s boundary, arrange the footprints on the board, add traces connecting components, and add annotations that will be silkscreened.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;&lt;a href="https://www.youtube.com/watch?v=zK3rDhJqMu0"&gt;This video tutorial by Widsor Schmidt&lt;/a&gt; was well done.
+He walks you through the whole process (opening KiCAD for the first time to finished PCB layout) in 20 minutes.
+I watched it repeatedly on 2x speed, pausing so I could follow along.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt; Schematic &lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;I don’t remember what tutorials I used for learning how to set up a schematic using KiCAD’s EESCHEMA program, but Schmidt’s video also covers that.
+I first used it a few years ago, and recall that I spent an evening to go from “KiCAD seems interesting” to “hand-sketched emergency stop schematic for my robot is now laid out nicely”.
+Here’s my oscillator circuit as represented in EESCHEMA:&lt;/p&gt;
+&lt;p&gt;&lt;img title="" for="" created="" oscillator,="" src="/images/my_first_pcb/schematic_eeschema.png" alt="" schematic="" with="" eeschema""=""&gt;&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt; Component Selection &lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;Next, we need to associate the symbols on the schematic with a real-world component that matches the required specs.
+This requires both picking the actual components you’ll use during assembly and specifying the footprint they need on the board.&lt;/p&gt;
+&lt;p&gt;If you want to use components that aren’t in one of KiCAD’s built-in libraries, you can make your own footprint.
+I’ll have to learn this eventually, but since my plan was to solder female headers to the board so I could swap components out, this was irrelevant.
+To save time on your first board, you can just use through-hole components with bendable leads (which you probably already have from breadboarding!) or footprints that are already in the libraries.
+If you’re desperate/lazy, just use the footprints from the &lt;a href="https://kicad.github.io/footprints/Connector_PinHeader_2.54mm"&gt;connector library&lt;/a&gt; -- they’ll work for anything that you were able to use on a 0.1” pitch breadboard!&lt;/p&gt;
+&lt;p&gt;The exceptions to this are the power switch and battery, both of which took me a long time to find and aren’t part of a typical breadboarding kit.
+I passionately hate &lt;a href="https://www.digikey.com/"&gt;Digikey’s&lt;/a&gt; search interface.
+It is shockingly bad at having the right metadata for filtering to be effective.
+&lt;a href="https://www.mouser.com/"&gt;Mouser&lt;/a&gt; is sometimes better, but I'm still not a fan.
+So, here are some good-enough options:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;I used &lt;a href="https://www.sparkfun.com/products/102"&gt;these&lt;/a&gt; breadboard-friendly switches from Sparkfun. I also like the &lt;a href="https://www.mouser.com/ProductDetail/611-JS202011CQN"&gt;C&amp;amp;K JS202011CQN&lt;/a&gt;, which has a footprint in the KiCAD &lt;a href="https://kicad.github.io/footprints/Button_Switch_THT"&gt;Button_Switch_THT library&lt;/a&gt;.&lt;/li&gt;
+&lt;li&gt;I used a coin cell battery to power my project. There are KiCAD footprints for the &lt;a href="https://www.digikey.com/product-detail/en/keystone-electronics/3000TR/36-3000CT-ND/1532229"&gt;Keystone 3000&lt;/a&gt; (12mm) battery holder and &lt;a href="https://www.mouser.com/ProductDetail/Keystone-Electronics/3008?qs=Mn60vILZNNaVxpUY7xQk0w%3D%3D"&gt;Keystone 3008&lt;/a&gt; (24mm). I prefer the &lt;a href="https://www.mouser.com/ProductDetail/Harwin/S8211-46R?qs=%2Fha2pyFaduitW8MYXNmFyAOddemjIubonMIopPD95c0%3D"&gt;Harwin S8211-46R&lt;/a&gt; for a 20mm battery because it’s easier to get the battery in/out, but there isn’t a built-in KiCAD footprint.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;If you want to scale down components to make the final board smaller, you’ll have to spend time shopping ... and scaling down in size also means figuring out how to do surface-mount soldering with tiny components.
+I may get to that someday, but not yet.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt; Board Layout &lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;The next step was to lay out my circuit as it would appear on a PCB.&lt;/p&gt;
+&lt;p&gt;I fiddled with the layout a lot (entirely redoing it 3x), and had lots of drudgery figuring out how to get the silkscreening to look almost right.
+I still don’t have a process that I love for that ... I imported &lt;a href="https://commons.wikimedia.org/wiki/Category:SVG_electrical_symbols#/media/File:Electrical_Symbols_IEC.svg"&gt;public domain electrical symbols&lt;/a&gt; as bitmaps, but it was hard to get their leads to have the exact same width to match.&lt;/p&gt;
+&lt;p&gt;Here's the representation of my board from pcbnew, showing all of the layers at once:&lt;/p&gt;
+&lt;p&gt;&lt;img class="center" width="65%" src="/images/my_first_pcb/pcbnew.png"&gt;&lt;/p&gt;
+&lt;p&gt;I don’t remember when/how I came up with the idea for making the circuit diagram part of the PCB design, but I suspect it was influenced by having seen &lt;a href="https://circuitclassics.com/"&gt;Star Simpson’s Circuit Classics&lt;/a&gt;&lt;sup id="sf-my-first-pcb-6-back"&gt;&lt;a title=" I was chagrined to rediscover her work while halfway through this project, and then realize that she actually did this exact same circuit! Our implementations wound up being rather different, but I did use her idea for a battery cutout. " class="simple-footnote" href="#sf-my-first-pcb-6"&gt;6&lt;/a&gt;&lt;/sup&gt; at some point.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt; Fabrication &lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;Once you’re happy with the circuit layout, head over to &lt;a href="http://oshpark.com/"&gt;OSHPark&lt;/a&gt; and upload your kicad_pcb file.
+Their interface is fantastic, and provides a nice rendering for you to do a final check on each layer, in addition to what the whole stackup will look like when manufactured:&lt;/p&gt;
+&lt;div class="figure"&gt;
+  &lt;img src="/images/my_first_pcb/oshpark_top.png" width="49%"&gt;
+  &lt;img src="/images/my_first_pcb/oshpark_bottom.png" width="49%"&gt;
+  &lt;p type="caption"&gt;
+    Renderings of the front (left) and back (right) of my PCB, generated by OSHPark.
+  &lt;/p&gt;
+&lt;/div&gt;
+
+&lt;p&gt;I didn't spec out the full market of available fabricators because OSHPark hit a sweet spot for me at the intersection of "cheap enough to do on a whim" and "caters to hobbyists/small batches, plays exceedingly well with KiCAD”, with a bonus of “the EE at work uses them for custom boards for our several million dollar robot, so quality must be OK”.
+Seriously, actually placing the order was the easiest part of this whole process.
+Their automatic import (straight from KiCAD’s .kicad_pcb format) automagically worked.&lt;/p&gt;
+&lt;p&gt;My first version of the layout was going to cost $7.85 to get 3 copies of the board.
+I made it bigger for aesthetic reasons, so I wound up spending $20.05, and shipping is free.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt; Results!! &lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;OSHPark did a great job, and they’re prettier than I expected!&lt;/p&gt;
+&lt;p&gt;I assembled two out of the three -- one with header&lt;sup id="sf-my-first-pcb-7-back"&gt;&lt;a title=" For this build, I used standard female header, cut apart with my wirecutters. It didn't work very well. In addition to being ugly, the components fit loosely. Next time, I'll use machine pin header, which provides a tighter fit for component leads and comes in a breakaway version even for female header. " class="simple-footnote" href="#sf-my-first-pcb-7"&gt;7&lt;/a&gt;&lt;/sup&gt; so I can swap in and out different components, and one with blue LEDs tuned to flash at about 1 Hz.&lt;/p&gt;
+&lt;div class="figure"&gt;
+  &lt;img width="45%" src="/images/my_first_pcb/assembled_off_components.jpg" alt="Assembled PCB with components"&gt;
+  &lt;img width="54%" src="/images/my_first_pcb/assembled_header2.jpg" alt="Assembled PCB with header"&gt;
+  &lt;p class="caption"&gt;
+    Assembled boards!
+  &lt;/p&gt;
+&lt;/div&gt;
+
+&lt;p&gt;The rough bits around the edges are mousebites, which are added by OSHPark in order to attach my board to others during the fabrication process.
+Afterwards, the thin tabs break easily, separating the boards.
+I don’t really want to sand fiberglass, so I may try covering them with clear nail polish.&lt;/p&gt;
+&lt;p&gt;There are a few issues that I'd fix in a v2:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;One of the vias is under the battery, and for some reason, it isn't covered with solder mask. Given that it's a bit recessed, it probably wouldn't have made contact, but to be safe, I put down a piece of kaptan tape. I think “tented via” may be the right keyword here?&lt;/li&gt;
+&lt;li&gt;The negative battery pad is also recessed, and the battery isn't making contact. For now, I applied a bit of solder to raise it up. I think the real fix may be to re-design the battery footprint such that the central pad is bigger and/or has a wider border of no-copper around it.&lt;/li&gt;
+&lt;li&gt;My LEDs don't turn off as quickly as the RC ornament one did. This has nothing to do with PCB design, and everything with me not yet fully understanding how different components affect the circuit. The header test board is meant to make testing my understanding easier!&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;However, I’m pretty happy with this! While I still have lots to learn, the workflow seems solid. My next step will be figuring out how to add my own footprints so I can use any component I want.&lt;/p&gt;
+&lt;!-- NOW I see why you'd want a plugin rather than raw html. I want to be able to use markdown within this paragraph, but since I've styled it with HTML, I can't. Blech. --&gt;
+
+&lt;p class="thanks"&gt;
+&lt;strong&gt; Acknowledgements: &lt;/strong&gt;
+
+Huge thanks to the community at RC for inspiring both the project and the writeup! &lt;a href="https://github.com/strickinato/recurse-christmas-pcb"&gt;Aaron Strick&lt;/a&gt; &amp;amp; Noah Zachary Gordon provided the original inspiration and encouragement to post this. &lt;a href="https://twitter.com/veronica_hanus"&gt;Veronica Hanus&lt;/a&gt; &amp;amp; &lt;a href="http://schuessler.org/"&gt;Robert Schuessler&lt;/a&gt; commented on an earlier draft.
+&lt;/p&gt;&lt;ol class="simple-footnotes"&gt;&lt;li id="sf-my-first-pcb-1"&gt;
+A Printed Circuit Board (PCB) provides places to attach the components in your circuit (pads/footprints) and provides the required electrical connections between them (traces).
+ &lt;a class="simple-footnote-back" href="#sf-my-first-pcb-1-back"&gt;↩&lt;/a&gt;&lt;/li&gt;&lt;li id="sf-my-first-pcb-2"&gt;
+If you need inspiration, how about &lt;a href="https://circuitdigest.com/electronic-circuits/push-button-led-circuit"&gt;a LED that lights up when you push a button&lt;/a&gt;, or &lt;a href="https://www.evilmadscientist.com/2007/a-simple-and-cheap-dark-detecting-led-circuit/"&gt;a LED that turns on in the dark&lt;/a&gt;? Or, check out the 100 simple circuits in the back of &lt;a href="https://www.amazon.com/Getting-Started-Electronics-Forrest-Mims/dp/0945053282"&gt;Forrest Mims's "Getting Started in Electronics"&lt;/a&gt;.
+ &lt;a class="simple-footnote-back" href="#sf-my-first-pcb-2-back"&gt;↩&lt;/a&gt;&lt;/li&gt;&lt;li id="sf-my-first-pcb-3"&gt;
+These are lots of websites explaining how this works.
+Here's a &lt;a href="https://www.falstad.com/circuit/e-multivib-a.html"&gt;nice simulation&lt;/a&gt;, and here's a &lt;a href="https://www.electronics-tutorials.ws/waveforms/astable.html"&gt;simpler explanation&lt;/a&gt;.
+ &lt;a class="simple-footnote-back" href="#sf-my-first-pcb-3-back"&gt;↩&lt;/a&gt;&lt;/li&gt;&lt;li id="sf-my-first-pcb-4"&gt;
+I'm always frustrated by the awkward layout and the fiddly solder bridges protoboard requires. However, it's useful if you want to make a breadboarded circuit more permanent without actually making a PCB. If you have to use protoboard, I like &lt;a href="https://www.amazon.com/Gikfun-Solder-able-Breadboard-Plated-Arduino/dp/B071R3BFNL"&gt;these from gikfun&lt;/a&gt; because they have the same electrical connectivity as a breadboard. (Adafruit's perma-proto is also good, but more expensive.) You can't get the layout as dense as you can on &lt;a href="https://www.amazon.com/AiTrip-Prototype-Universal-Protoboard-Compatible/dp/B07W83VJGV"&gt;other protoboard&lt;/a&gt;, but it cuts down on how many solder bridges you have to create.
+ &lt;a class="simple-footnote-back" href="#sf-my-first-pcb-4-back"&gt;↩&lt;/a&gt;&lt;/li&gt;&lt;li id="sf-my-first-pcb-5"&gt;
+I used v4 for this project, but you should definitely use v5. They fixed a lot of the rough edges, and it's more pleasant all-around.
+ &lt;a class="simple-footnote-back" href="#sf-my-first-pcb-5-back"&gt;↩&lt;/a&gt;&lt;/li&gt;&lt;li id="sf-my-first-pcb-6"&gt;
+I was chagrined to rediscover her work while halfway through this project, and then realize that she actually did this exact same circuit! Our implementations wound up being rather different, but I did use her idea for a battery cutout.
+ &lt;a class="simple-footnote-back" href="#sf-my-first-pcb-6-back"&gt;↩&lt;/a&gt;&lt;/li&gt;&lt;li id="sf-my-first-pcb-7"&gt;
+For this build, I used standard female header, cut apart with my wirecutters. It didn't work very well. In addition to being ugly, the components fit loosely. Next time, I'll use machine pin header, which provides a tighter fit for component leads and comes in a breakaway version even for female header.
+ &lt;a class="simple-footnote-back" href="#sf-my-first-pcb-7-back"&gt;↩&lt;/a&gt;&lt;/li&gt;&lt;/ol&gt;</summary></entry><entry><title>Touring UTIG's Airplane</title><link href="/blog/2016/02/27/touring-utigs-airplane/" rel="alternate"></link><updated>2016-02-27T00:00:00-06:00</updated><author><name>Laura Lindzey</name></author><id>tag:,2016-02-27:blog/2016/02/27/touring-utigs-airplane/</id><summary type="html">&lt;p&gt;&lt;img title="Picture of JKB taxiing in front of Erebus" src="/images/platform_tour/erebus_mkb.jpg" alt="Picture of JKB taxiing in front of Erebus"&gt;&lt;/p&gt;
 &lt;p&gt;Don Blankenship's research group at UTIG has been collecting geophysical data in Antarctica for decades.
-Each season, we hire &lt;a href="http://www.borekair.com/"&gt;Kenn Borek Air&lt;/a&gt;&lt;sup id="sf-touring-utigs-airplane-1-back"&gt;&lt;a href="#sf-touring-utigs-airplane-1" title=" KBA operates most of the non-military planes in Antarctica. " class="simple-footnote"&gt;1&lt;/a&gt;&lt;/sup&gt; to operate one of their modified airplanes, stuff it full of sensors, and fly around Antarctica.
+Each season, we hire &lt;a href="http://www.borekair.com/"&gt;Kenn Borek Air&lt;/a&gt;&lt;sup id="sf-touring-utigs-airplane-1-back"&gt;&lt;a title=" KBA operates most of the non-military planes in Antarctica. " class="simple-footnote" href="#sf-touring-utigs-airplane-1"&gt;1&lt;/a&gt;&lt;/sup&gt; to operate one of their modified airplanes, stuff it full of sensors, and fly around Antarctica.
 This post attempts to give a tour of the hardware involved, with an emphasis on its scientific purpose and a detour through Antarctic logistics.&lt;/p&gt;
 
 
 &lt;h4&gt;Why aerogeophysics?&lt;/h4&gt;
-&lt;p&gt;&lt;img src="/images/platform_tour/AntarcticaUSA.jpg" alt="credit: NASA" title="credit: NASA"&gt;
+&lt;p&gt;&lt;img title="credit: NASA" src="/images/platform_tour/AntarcticaUSA.jpg" alt="credit: NASA"&gt;
 &lt;!--  captions fail with slashes. Argh. "credit: http://www.nasa.gov/mission_pages/icebridge/multimedia/fall11/antarctica-US.html" %} --&gt;&lt;/p&gt;
 &lt;p&gt;Antarctica is huge and hard to access.
-While some types of data require in situ measurements (and are collected by overland traverses or teams dropped off by helicopter), the most efficient way to obtain basic information about the thickness of the ice and properties of the rock underneath it is to mount sensors in an airplane and start flying.
+While some types of data require in situ measurements the most efficient way to obtain basic information about the thickness of the ice and properties of the rock underneath it is to mount sensors in an airplane and start flying.
 &lt;!-- Our group uses lasers to measure how quickly the ice surface elevation is changing, radar to measure its thickness, and gravity &amp; magnetics to characterize the density and type of rock underneath the ice. --&gt;
 This type of mapping is inherently 1D in nature - we obtain very dense observations along a flight line, then interpolate tens of kilometers between the lines to create a map.&lt;/p&gt;
-&lt;p&gt;&lt;img src="/images/platform_tour/bedmap_distances.jpg" alt="Bedmap2 data coverage - black lines are from ice-penetrating radar. Image from Fretwell et al. 2013" title="Bedmap2 data coverage - black lines are from ice-penetrating radar. Image from Fretwell et al. 2013" width="315"&gt;
-&lt;img src="/images/platform_tour/all_UTIG_0.png" alt="UTIG radar coverage" title="UTIG radar coverage" width="300"&gt;&lt;/p&gt;
-&lt;p&gt;The left plot above shows everwhere that BEDMAP2&lt;sup id="sf-touring-utigs-airplane-2-back"&gt;&lt;a href="#sf-touring-utigs-airplane-2" title=" BEDMAP2 was an effort to integrate all the available data into maps of Antarctica's bedrock and ice thickness: Fretwell, P., Pritchard, H. D., Vaughan, D. G., Bamber, J. L., Barrand, N. E., Bell, R., Bianchi, C., Bingham, R. G., Blankenship, D. D., Casassa, G., and Others (2013). Bedmap2: improved ice bed, surface and thickness datasets for Antarctica. The Cryosphere, 7(1):375–393. " class="simple-footnote"&gt;2&lt;/a&gt;&lt;/sup&gt;
-has data.
-Almost all of the black lines represent a single flight line.
-The densest (apparently solid) regions of black lines correspond to grids with 5km line spacing.
-The right plot shows where my research group has flown over the past few decades.
-Until this season, there were places where the closest measurement was hundreds of kilometers away.&lt;sup id="sf-touring-utigs-airplane-3-back"&gt;&lt;a href="#sf-touring-utigs-airplane-3" title=" There may still be such places, since I haven't seen an updated map, but I was involved in a project that filled in the biggest hole. " class="simple-footnote"&gt;3&lt;/a&gt;&lt;/sup&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img title="Bedmap2 data coverage - black lines are from ice-penetrating radar. Image from Fretwell et al. 2013" width="315" src="/images/platform_tour/bedmap_distances.jpg" alt="Bedmap2 data coverage - black lines are from ice-penetrating radar. Image from Fretwell et al. 2013"&gt;&lt;/p&gt;
+&lt;p&gt;Black lines in the plot above show everwhere that BEDMAP2&lt;sup id="sf-touring-utigs-airplane-2-back"&gt;&lt;a title=" BEDMAP2 was an effort to integrate all the available data into maps of Antarctica's bedrock and ice thickness: Fretwell, P., Pritchard, H. D., Vaughan, D. G., Bamber, J. L., Barrand, N. E., Bell, R., Bianchi, C., Bingham, R. G., Blankenship, D. D., Casassa, G., and Others (2013). Bedmap2: improved ice bed, surface and thickness datasets for Antarctica. The Cryosphere, 7(1):375–393. " class="simple-footnote" href="#sf-touring-utigs-airplane-2"&gt;2&lt;/a&gt;&lt;/sup&gt;
+has ice thickness data.
+Until this season, there were places where the closest airborne measurement was hundreds of kilometers away, and the ice thickness estimate is based on very low resolution satellite gravity measurements!&lt;sup id="sf-touring-utigs-airplane-3-back"&gt;&lt;a title=" There may still be such places, since I haven't seen an updated map, but I was involved in a project that filled in the biggest hole. " class="simple-footnote" href="#sf-touring-utigs-airplane-3"&gt;3&lt;/a&gt;&lt;/sup&gt;&lt;/p&gt;
 &lt;h4&gt;The airplane (and logistics)&lt;/h4&gt;
-&lt;p&gt;My research group currently uses WWII-era DC-3s,&lt;sup id="sf-touring-utigs-airplane-4-back"&gt;&lt;a href="#sf-touring-utigs-airplane-4" title=" I'll interchangeably refer to these airplanes as DC-3s and Baslers. DC-3 was the original designation; Basler is the name of a company that takes these old airplanes and entirely refurbishes them for Arctic/Antarctic work. " class="simple-footnote"&gt;4&lt;/a&gt;&lt;/sup&gt;
-like the one in the picture at the start of this post.&lt;sup id="sf-touring-utigs-airplane-5-back"&gt;&lt;a href="#sf-touring-utigs-airplane-5" title=" JKB, the airplane shown in many off these photos, was used in WWII. " class="simple-footnote"&gt;5&lt;/a&gt;&lt;/sup&gt;
+&lt;p&gt;My research group currently uses WWII-era DC-3s,&lt;sup id="sf-touring-utigs-airplane-4-back"&gt;&lt;a title=" I'll interchangeably refer to these airplanes as DC-3s and Baslers. DC-3 was the original designation; Basler is the name of a company that takes these old airplanes and entirely refurbishes them for Arctic/Antarctic work. " class="simple-footnote" href="#sf-touring-utigs-airplane-4"&gt;4&lt;/a&gt;&lt;/sup&gt;
+like the one in the picture at the start of this post.&lt;sup id="sf-touring-utigs-airplane-5-back"&gt;&lt;a title=" JKB, the airplane shown in many off these photos, was used in WWII. " class="simple-footnote" href="#sf-touring-utigs-airplane-5"&gt;5&lt;/a&gt;&lt;/sup&gt;
 We've used these since 2007. All through the 1990's and early 2000's, they used a Twin Otter (below).
 Conceptually, not much has changed - while we're continually upgrading the instruments, the same types of data have been being collected for over 20 years.&lt;/p&gt;
-&lt;p&gt;&lt;img src="/images/platform_tour/sjb.jpg" alt="Twin Otter SJB; Credit: Matt Fields-Johnson" title="Twin Otter SJB; Credit: Matt Fields-Johnson" width="500"&gt;&lt;/p&gt;
-&lt;p&gt;Each season is slightly different, but a common pattern is to ship everything to a larger coastal station (McMurdo or Casey), do our setup and test flights from there, then fly to another base or field camp or series of bases closer to where we want to collect data, spend anywhere from a few days to a month at each spot, then head back to the bigger station for deconfiguration and getting home.
-Cargo usually travels to Antarctica on an airplane and returns on an icebreaker,&lt;sup id="sf-touring-utigs-airplane-6-back"&gt;&lt;a href="#sf-touring-utigs-airplane-6" title=" The boat is obviously preferable and cheaper, but our field seasons typically begin in October or November when there's still too much sea ice for even an icebreaker to make it to the stations. " class="simple-footnote"&gt;6&lt;/a&gt;&lt;/sup&gt;
-while humans usually travel both ways in a C-17 or LC-130&lt;sup id="sf-touring-utigs-airplane-7-back"&gt;&lt;a href="#sf-touring-utigs-airplane-7" title=" I thought the C-17 was uncomfortable until I got to ride in the LC-130. Get friendly with the people across from you! If you're really lucky, you might get a spot in the Australian Airbus, where you're served real food and have a whole row of seats to yourself. At least on the military planes you can visit the cockpit, but if you want a view from the cabin, you'll have to wait your turn at one of about 4 tiny windows. " class="simple-footnote"&gt;7&lt;/a&gt;&lt;/sup&gt;
-operated by the Air National Guard flying to and from Christchurch, New Zealand.&lt;/p&gt;
+&lt;p&gt;&lt;img title="Twin Otter SJB; Credit: Matt Fields-Johnson" width="500" src="/images/platform_tour/sjb.jpg" alt="Twin Otter SJB; Credit: Matt Fields-Johnson"&gt;&lt;/p&gt;
+&lt;p&gt;Each season is different, but a common pattern is to ship everything to a larger coastal station (McMurdo or Casey), where we install and test our instruments. We then fly from there to a base closer to our study area. This might be another station, a series of stations, or even a field camp. The image below is the WAIS Divide field camp, where I spent about a month last year - sleeping in a tent was surprisingly comfortable! We'll stay anywhere from a few days to a month at each location, then transit back to the original station to pack up and head home.&lt;/p&gt;
+&lt;p&gt;&lt;img title="Tent City, WAIS Divide field camp" src="/images/platform_tour/WAIS_Divide.jpg" alt="Tent City, WAIS Divide field camp"&gt;&lt;/p&gt;
+&lt;!--
+Humans usually travel to and from Antarctica in a C-17 or LC-130[ref]
+I thought the C-17 was uncomfortable until I got to ride in the LC-130. Get friendly with the people across from you! If you're really lucky, you might get a spot in the Australian Airbus, where you're served real food and have a whole row of seats to yourself. At least on the military planes you can visit the cockpit, but if you want a view from the cabin, you'll have to wait your turn at one of about 4 tiny windows.
+[/ref]
+while cargo usually travels to Antarctica on an airplane and returns on an icebreaker.[ref]
+The boat is obviously preferable and cheaper, but our field seasons typically begin in October or November when there's still too much sea ice for even an icebreaker to make it to the stations.
+[/ref]
+--&gt;
+
 &lt;p&gt;I may have mentioned stuffing the airplane full:&lt;/p&gt;
-&lt;p&gt;&lt;img src="/images/platform_tour/transit_racks1-4.jpg" alt="Transit flight, rack1-3" title="Transit flight, rack1-3" width="340"&gt;
-&lt;img src="/images/platform_tour/rack4_pcl.jpg" alt="Transit flight, rack 4 and PCL" title="Transit flight, rack 4 and PCL" width="340"&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img title="Transit flight, rack1-3" width="340" src="/images/platform_tour/transit_racks1-4.jpg" alt="Transit flight, rack1-3"&gt;
+&lt;img title="Transit flight, rack 4 and PCL" width="340" src="/images/platform_tour/rack4_pcl.jpg" alt="Transit flight, rack 4 and PCL"&gt;&lt;/p&gt;
 &lt;p&gt;The above images are from transit flights, when we had way more people and baggage than for normal survey operations.
 The right photo was taken looking from the center of the plane towards the back.
-In it, we can see part of rack 4 (used for HF radar electronics), the photon counting lidar with its control laptop&lt;sup id="sf-touring-utigs-airplane-8-back"&gt;&lt;a href="#sf-touring-utigs-airplane-8" title=" Sadly, it would appear that this temperamental instrument is only collecting noise in this image. " class="simple-footnote"&gt;8&lt;/a&gt;&lt;/sup&gt;
+In it, we can see part of rack 4 (used for HF radar electronics), the photon counting lidar with its control laptop&lt;sup id="sf-touring-utigs-airplane-6-back"&gt;&lt;a title=" Sadly, it would appear that this temperamental instrument is only collecting noise in this image. " class="simple-footnote" href="#sf-touring-utigs-airplane-6"&gt;6&lt;/a&gt;&lt;/sup&gt;
 on top, and the curtain that separates the heated part of the plane from the cargo doors.&lt;/p&gt;
 &lt;p&gt;From a similar location but looking forward (and taken on a non-transit flight!) we get a nice look at the racks in the front half of the airplane:&lt;/p&gt;
 &lt;p&gt;&lt;img src="/images/platform_tour/racks1-3.jpg" alt="racks 1-3, looking forwards"&gt;&lt;/p&gt;
 &lt;p&gt;Starting at the cockpit, we have:&lt;/p&gt;
 &lt;ul&gt;
-&lt;li&gt;rack 1 - operator interface, VHF amplifier&lt;/li&gt;
+&lt;li&gt;rack 1 - operator interface, &lt;abbr title="Very High Frequency"&gt;VHF&lt;/abbr&gt; amplifier&lt;/li&gt;
 &lt;li&gt;rack 2 - VHF radar electronics&lt;/li&gt;
 &lt;li&gt;black box - gravimeter&lt;/li&gt;
 &lt;li&gt;rack 3 - gravimeter electronics&lt;/li&gt;
 &lt;/ul&gt;
-&lt;p&gt;It takes an absolute minimum of 2 days to install all of this, several more for test flights to make sure everything works, and a very full day at the end of the season to strip it all out and start packing to go home.&lt;/p&gt;
-&lt;p&gt;&lt;img src="/images/platform_tour/kevin_and_john.jpg" alt="Kevin and John, our pilots last season" title="Kevin and John, our pilots last season"&gt;&lt;/p&gt;
+&lt;!--
+It takes an absolute minimum of 2 days to install all of this, several more for test flights to make sure everything works, and a very full day at the end of the season to strip it all out and start packing to go home.
+--&gt;
+
+&lt;p&gt;&lt;img title="Kevin and John, our pilots last season" src="/images/platform_tour/kevin_and_john.jpg" alt="Kevin and John, our pilots last season"&gt;&lt;/p&gt;
 &lt;p&gt;Any Kenn Borek airplane comes with 3 people dedicated to its operation: a mechanic (who is usually waiting back at the station), a pilot, and a copilot.
 Here are Kevin (left) and John (right), our pilots last season.&lt;/p&gt;
-&lt;p&gt;&lt;img src="/images/platform_tour/refueling_dmc.jpg" alt="Refueling at Dome C" title="Refueling at Dome C"&gt;&lt;/p&gt;
-&lt;p&gt;We find that the DC-3 has the best tradeoff for fuel burned per line-km of data collected.&lt;sup id="sf-touring-utigs-airplane-9-back"&gt;&lt;a href="#sf-touring-utigs-airplane-9" title="     In addition to the DC-3s and Twin Otters, other groups have used LC-130s and P-3s to collect radar sounding data. They're bigger, fly faster, and burn more fuel.     " class="simple-footnote"&gt;9&lt;/a&gt;&lt;/sup&gt;
-This airplane burns ~1000&lt;sup id="sf-touring-utigs-airplane-10-back"&gt;&lt;a href="#sf-touring-utigs-airplane-10" title=" This varies dramatically with elevation; we get significantly better than this flying over the Antarctic Plateau, and worse around the coast. " class="simple-footnote"&gt;10&lt;/a&gt;&lt;/sup&gt;
-pounds per hour,&lt;sup id="sf-touring-utigs-airplane-11-back"&gt;&lt;a href="#sf-touring-utigs-airplane-11" title="     If you're at a coastal station, fuel is brought in on an ice breaker, and is less of a constraint. If you're inland, that fuel is either brought in via a traverse (huge logistical operation) or flown in on LC-130s. Last season, at WAIS divide, the United States Antarctic Program used LC-130s to bring us fuel. They burn 3000 pounds of fuel an hour, and each delivery run from McMurdo provides enough fuel for ~3 of our survey flights.     " class="simple-footnote"&gt;11&lt;/a&gt;&lt;/sup&gt;
-travels at a nominal cruising speed of 160 knots, and has an endurance of ~6.5 hours in survey configuration.&lt;sup id="sf-touring-utigs-airplane-12-back"&gt;&lt;a href="#sf-touring-utigs-airplane-12" title="     Endurance is primarily a function of how much fuel can be carried. The upper limit is neither the volume of the tanks nor the maximum weight that can get airborne - it's the maximum weight that the airplane can safely land with, if an emergency landing were required just after takeoff. Nobody is going to be happy if you dump fuel over Antarctica. This means that each additional passenger costs ~15 minutes of extremely expensive survey time, and has been known to be a factor in deciding which additional instruments to install. Do you want the full suite of available instruments, or do you want an additional 30 minutes of survey time in order to reach that geologically interesting hole in the map?     " class="simple-footnote"&gt;12&lt;/a&gt;&lt;/sup&gt;
+&lt;p&gt;&lt;img title="Refueling at Dome C" src="/images/platform_tour/refueling_dmc.jpg" alt="Refueling at Dome C"&gt;&lt;/p&gt;
+&lt;p&gt;We find that the DC-3 has the best tradeoff for fuel burned per line-km of data collected.&lt;sup id="sf-touring-utigs-airplane-7-back"&gt;&lt;a title="     In addition to the DC-3s and Twin Otters, other groups have used LC-130s and P-3s to collect radar sounding data. They're bigger, fly faster, and burn more fuel.     " class="simple-footnote" href="#sf-touring-utigs-airplane-7"&gt;7&lt;/a&gt;&lt;/sup&gt;
+This airplane burns ~1000&lt;sup id="sf-touring-utigs-airplane-8-back"&gt;&lt;a title=" This varies dramatically with elevation; we get significantly better than this flying over the Antarctic Plateau, and worse around the coast. " class="simple-footnote" href="#sf-touring-utigs-airplane-8"&gt;8&lt;/a&gt;&lt;/sup&gt;
+pounds per hour,&lt;sup id="sf-touring-utigs-airplane-9-back"&gt;&lt;a title="     If you're at a coastal station, fuel is brought in on an ice breaker, and is less of a constraint. If you're inland, that fuel is either brought in via a traverse (huge logistical operation) or flown in on LC-130s. Last season, at WAIS divide, the United States Antarctic Program used LC-130s to bring us fuel. They burn 3000 pounds of fuel an hour, and each delivery run from McMurdo provides enough fuel for ~3 of our survey flights.     " class="simple-footnote" href="#sf-touring-utigs-airplane-9"&gt;9&lt;/a&gt;&lt;/sup&gt;
+travels at a nominal cruising speed of 160 knots, and has an endurance of ~6.5 hours in survey configuration.&lt;sup id="sf-touring-utigs-airplane-10-back"&gt;&lt;a title="     Endurance is primarily a function of how much fuel can be carried. The upper limit is neither the volume of the tanks nor the maximum weight that can get airborne - it's the maximum weight that the airplane can safely land with, if an emergency landing were required just after takeoff. Nobody is going to be happy if you dump fuel over Antarctica. This means that each additional passenger costs ~15 minutes of extremely expensive survey time, and has been known to be a factor in deciding which additional instruments to install. Do you want the full suite of available instruments, or do you want an additional 30 minutes of survey time in order to reach that geologically interesting hole in the map?     " class="simple-footnote" href="#sf-touring-utigs-airplane-10"&gt;10&lt;/a&gt;&lt;/sup&gt;
 So, for every day of good weather, we can get up to 2000 line-km of data.
-If the weather has been bad and the pilots have extra hours available, we might do two 5-hour flights rather than a single 6.5 hour one, but that's the maximum for a single flight crew.&lt;sup id="sf-touring-utigs-airplane-13-back"&gt;&lt;a href="#sf-touring-utigs-airplane-13" title="     Pilots have legally- and contractually-mandated maximum duty day lengths, days off, maximum hours in the air per day, and rolling weekly/monthly flight hour maximums.     " class="simple-footnote"&gt;13&lt;/a&gt;&lt;/sup&gt;&lt;/p&gt;
-&lt;p&gt;&lt;img src="/images/platform_tour/flying_weather.jpg" alt="not flying weather" title="not flying weather"&gt;&lt;/p&gt;
+If the weather has been bad and the pilots have extra hours available, we might do two 5-hour flights rather than a single 6.5 hour one, but that's the maximum for a single flight crew.&lt;sup id="sf-touring-utigs-airplane-11-back"&gt;&lt;a title="     Pilots have legally- and contractually-mandated maximum duty day lengths, days off, maximum hours in the air per day, and rolling weekly/monthly flight hour maximums.     " class="simple-footnote" href="#sf-touring-utigs-airplane-11"&gt;11&lt;/a&gt;&lt;/sup&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img title="not flying weather" src="/images/platform_tour/flying_weather.jpg" alt="not flying weather"&gt;&lt;/p&gt;
 &lt;p&gt;Antarctic weather is usually the biggest challenge to successfully flying all of the survey lines that we've planned.
 At a rough estimate, we're only able to fly 1/2 of the days when the airplane is available.
 The biggest worry here is the ability to land.
 When you're using snow for a runway, it doesn't take much in the way of clouds or fog to ruin all contrast.
 Add a few more clouds or some snow falling from the sky as in the picture above, and it can be hard to find the horizon when you're just walking around.
 Clouds are also a problem because of the potential for the wings - or worse, the radar antennas - to ice up.
-Where we were operating last season, there were no good alternative runways, which meant that we were only able to fly when the weather was forecast to be pristine for the next ~8 hours.&lt;sup id="sf-touring-utigs-airplane-14-back"&gt;&lt;a href="#sf-touring-utigs-airplane-14" title=" This was … tough. The field camp was at an ice divide, meaning that weather systems could blow in from any of three directions, with very hard-to-predict timing. " class="simple-footnote"&gt;14&lt;/a&gt;&lt;/sup&gt;&lt;/p&gt;
+Where we were operating last season, there were no good alternative runways, which meant that we were only able to fly when the weather was forecast to be pristine for the next ~8 hours.&lt;sup id="sf-touring-utigs-airplane-12-back"&gt;&lt;a title=" This was … tough. The field camp was at an ice divide, meaning that weather systems could blow in from any of three directions, with very hard-to-predict timing. " class="simple-footnote" href="#sf-touring-utigs-airplane-12"&gt;12&lt;/a&gt;&lt;/sup&gt;&lt;/p&gt;
 &lt;p&gt;Once we have everything installed and are airborne, what data are we collecting?&lt;/p&gt;
 &lt;h4&gt;VHF Radar&lt;/h4&gt;
-&lt;p&gt;&lt;img src="/images/platform_tour/installing_antenna.jpg" alt="Installing VHF antennas on MKB" title="Installing VHF antennas on MKB"&gt;&lt;/p&gt;
-&lt;p&gt;The most visible external modifications that we make to the airplane are the antennas installed under each wing for the VHF radar.
-While the receiver electronics have changed multiple times since then, these antennas are the same ones that were used back in the 1970's for some of the first ice-penetrating radar surveys of Antarctica.&lt;sup id="sf-touring-utigs-airplane-15-back"&gt;&lt;a href="#sf-touring-utigs-airplane-15" title=" That was before GPS, so the positioning was only good to ~5km, and the radar data was recorded photographically, not digitally! The technology didn't exist to digitize the received signals and write them to disk like we do now. " class="simple-footnote"&gt;15&lt;/a&gt;&lt;/sup&gt;
-Both antennas are used for transmitting the 8kW signal and for receiving the much weaker echoes.&lt;/p&gt;
-&lt;p&gt;&lt;img src="/images/platform_tour/ASB.JKB1a.R10Wa_full.png" alt="" example="" asb.jkb1a.r10wa""="" transect:="" title=""&gt;&lt;/p&gt;
-&lt;p&gt;We use this 60MHz radar to get a 2D cross-section of the ice.
-An example of the data is shown above - you can clearly see the ice surface, layers within the ice, and mountains underneath.
+&lt;p&gt;&lt;img title="Installing VHF antennas on MKB" src="/images/platform_tour/installing_antenna.jpg" alt="Installing VHF antennas on MKB"&gt;&lt;/p&gt;
+&lt;p&gt;The most visible external modifications that we make to the airplane are the antennas installed under each wing for the 60MHz VHF radar that we use to get a 2D cross section of the ice.
+While the receiver electronics have changed multiple times since then, these antennas are the same ones that were used back in the 1970's for some of the first ice-penetrating radar surveys of Antarctica.&lt;sup id="sf-touring-utigs-airplane-13-back"&gt;&lt;a title=" That was before GPS, so the positioning was only good to ~5km, and the radar data was recorded photographically, not digitally! The technology didn't exist to digitize the received signals and write them to disk like we do now. " class="simple-footnote" href="#sf-touring-utigs-airplane-13"&gt;13&lt;/a&gt;&lt;/sup&gt;
+Both antennas are used both for transmitting the 8kW signal and for receiving the much weaker echoes.&lt;/p&gt;
+&lt;p&gt;&lt;img asb.jkb1a.r10wa""="" title="" transect:="" src="/images/platform_tour/ASB.JKB1a.R10Wa_full.png" alt="" example=""&gt;&lt;/p&gt;
+&lt;p&gt;An example of the data is shown above - you can clearly see the ice surface, layers within the ice, and mountains underneath.
 I've previously talked about &lt;a href="/blog/2015/07/27/a-brief-introduction-to-ice-penetrating-radar/"&gt;interpreting the radargrams&lt;/a&gt;, so I won't go further into it here.&lt;/p&gt;
 &lt;p&gt;The most basic science done with data from this sensor is determining the topography underneath kilometers of ice.
 Among other things, this is important for calculating how much potential sea level change is locked up in Antarctica, and how stable the ice sheet is likely to be.&lt;/p&gt;
-&lt;p&gt;&lt;img src="/images/platform_tour/Fretwell2013BedmapImage.png" alt="Bedmap2 image from Fretwell et al. 2013" title="Bedmap2 image from Fretwell et al. 2013" width="610"&gt;&lt;/p&gt;
-&lt;p&gt;We are proud of having collected a significant portion of the line-km that were used to create Bedmap2.&lt;sup id="sf-touring-utigs-airplane-16-back"&gt;&lt;a href="#sf-touring-utigs-airplane-16" title=" Fretwell, P., Pritchard, H. D., Vaughan, D. G., Bamber, J. L., Barrand, N. E., Bell, R., Bianchi, C., Bingham, R. G., Blankenship, D. D., Casassa, G., and Others (2013). Bedmap2: improved ice bed, surface and thickness datasets for Antarctica. The Cryosphere, 7(1):375–393. " class="simple-footnote"&gt;16&lt;/a&gt;&lt;/sup&gt;
-Bedmap2&lt;sup id="sf-touring-utigs-airplane-17-back"&gt;&lt;a href="#sf-touring-utigs-airplane-17" title=" NASA has produced some very fun visualizations of the improvement bewteen BEDMAP and BEDMAP2, as well as the ice surface / bed topography. We collected some of the data as a part of NASA's Operation Ice Bridge (mostly in East Antarctica). link " class="simple-footnote"&gt;17&lt;/a&gt;&lt;/sup&gt; is the most recent compilation of Antarctic ice-depth and sub-ice topography data.&lt;sup id="sf-touring-utigs-airplane-18-back"&gt;&lt;a href="#sf-touring-utigs-airplane-18" title=" Of course, it was obsolete as soon as it came out, as everybody continues to collect more data. " class="simple-footnote"&gt;18&lt;/a&gt;&lt;/sup&gt;
-The image above shows the bed elevation - note how much of the continent is actually lower than sea level!&lt;/p&gt;
+&lt;p&gt;&lt;img title="Bedmap2 image from Fretwell et al. 2013" width="610" src="/images/platform_tour/Fretwell2013BedmapImage.png" alt="Bedmap2 image from Fretwell et al. 2013"&gt;
+&lt;img title="Bedmap2 data coverage - black lines are from ice-penetrating radar. Image from Fretwell et al. 2013" width="315" src="/images/platform_tour/bedmap_coverage.jpg" alt="Bedmap2 data coverage - black lines are from ice-penetrating radar. Image from Fretwell et al. 2013"&gt;
+&lt;img title="UTIG radar coverage" width="300" src="/images/platform_tour/all_UTIG_0.png" alt="UTIG radar coverage"&gt;&lt;/p&gt;
+&lt;p&gt;We are proud of having collected a significant portion of the line-km that were used to create Bedmap2.&lt;sup id="sf-touring-utigs-airplane-14-back"&gt;&lt;a title=" Fretwell, P., Pritchard, H. D., Vaughan, D. G., Bamber, J. L., Barrand, N. E., Bell, R., Bianchi, C., Bingham, R. G., Blankenship, D. D., Casassa, G., and Others (2013). Bedmap2: improved ice bed, surface and thickness datasets for Antarctica. The Cryosphere, 7(1):375–393. " class="simple-footnote" href="#sf-touring-utigs-airplane-14"&gt;14&lt;/a&gt;&lt;/sup&gt;
+Bedmap2&lt;sup id="sf-touring-utigs-airplane-15-back"&gt;&lt;a title=" NASA has produced some very fun visualizations of the improvement bewteen BEDMAP and BEDMAP2, as well as the ice surface / bed topography. We collected some of the data as a part of NASA's Operation Ice Bridge (mostly in East Antarctica). link " class="simple-footnote" href="#sf-touring-utigs-airplane-15"&gt;15&lt;/a&gt;&lt;/sup&gt; is the most recent compilation of Antarctic ice-depth and sub-ice topography data.&lt;sup id="sf-touring-utigs-airplane-16-back"&gt;&lt;a title=" Of course, it was obsolete as soon as it came out, as everybody continues to collect more data. " class="simple-footnote" href="#sf-touring-utigs-airplane-16"&gt;16&lt;/a&gt;&lt;/sup&gt;
+The large image above shows the bed elevation - note how much of the continent is actually lower than sea level!
+The smaller image on the left shows the source of the data.
+Almost all of the black lines represent a single flight line.
+The densest (apparently solid) regions of black lines correspond to grids with 5km line spacing.
+The right plot shows where my research group has flown over the past few decades.&lt;/p&gt;
 &lt;!--
 
 {% img /images/platform_tour/Young2011BedElevations.png 500 "ASB bed elevations from Young et al. 2011" "ASB bed elevations from Young et al. 2011" %}
@@ -101,35 +668,33 @@ The hypothesized coastlines are shown in the image above right.
 &lt;p&gt;In addition to the 60MHz VHF radar, we also field a 2MHz HF radar.
 Rather than antennas under the wings, we unspool a &lt;span class="math"&gt;\(\sim\)&lt;/span&gt;60m long wire antenna through a port in the floor.
 My attempts to get a clear picture of this antenna deployed while in flight have failed, so the best I have is one of Jamin preparing to reel the antenna back in.&lt;/p&gt;
-&lt;p&gt;&lt;img src="/images/platform_tour/hf_interior.jpg" the="" jsg="" title="" of="" pic="" in""="" alt="" reeling="" antenna=""&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img pic="" in""="" reeling="" antenna="" title="" src="/images/platform_tour/hf_interior.jpg" the="" alt="" jsg="" of=""&gt;&lt;/p&gt;
 &lt;p&gt;The main factors determining how deep of a bed we can detect is the radar signal's attenuation as it passes through the ice.
 Both warmer ice and saltier ice lead to higher losses, as does a rough surface that causes scattering.
 In some conditions, energy at 2MHz penetrates better than energy at 60MHz, at the cost of poorer vertical resultion due to the much longer wavelength.&lt;/p&gt;
 &lt;p&gt;We primarily fly this dual-frequency setup as a testbed for the REASON instrument that will be on the next mission to Europa.&lt;/p&gt;
 &lt;h4&gt;Gravity&lt;/h4&gt;
 &lt;p&gt;I'm continually amazed that we're able to measure accelarations accurately enough to infer underwater topography based on local changes in gravitational acceleration.
-Stationary instruments on the ground can measure to a precision of ~5uGal.
-For context, the gravity field changes by ~300uGal/m as you get farther from the center of the earth, and 1G = 9.8m/s2 = 980Gal.
-From a moving platform with turbulance, we'll get precision on the order of a few mGal.
-This requires integrating many measurements in order to get a usable signal to noise ratio, which means that we're only able to detect features on the scale of ~5km.&lt;sup id="sf-touring-utigs-airplane-19-back"&gt;&lt;a href="#sf-touring-utigs-airplane-19" title=" For a fixed sampling rate, the slower you fly the better your data will be. We're excited about the potential for mounting gravimeters on helicopters to get even higher-resolution data! Lower is also better, because you're closer to the source. " class="simple-footnote"&gt;19&lt;/a&gt;&lt;/sup&gt;
+From a moving platform with turbulance, we'll get precision on the order of a few mGal.&lt;sup id="sf-touring-utigs-airplane-17-back"&gt;&lt;a title=" For context, the gravity field changes by ~300uGal/m as you get farther from the center of the earth, and 1G = 9.8m/s2 = 980Gal. Stationary instruments on the ground can measure to a precision of ~5uGal. " class="simple-footnote" href="#sf-touring-utigs-airplane-17"&gt;17&lt;/a&gt;&lt;/sup&gt;
+This requires integrating many measurements in order to get a usable signal to noise ratio, which means that we're only able to detect features with a length scale of ~5km.&lt;sup id="sf-touring-utigs-airplane-18-back"&gt;&lt;a title=" For a fixed sampling rate, the slower you fly the better your data will be. We're excited about the potential for mounting gravimeters on helicopters to get even higher-resolution data! Lower is also better, because you're closer to the source. " class="simple-footnote" href="#sf-touring-utigs-airplane-18"&gt;18&lt;/a&gt;&lt;/sup&gt;
 The main complication when interpreting gravity data is that you're actually measuring differences in density.
 If you assume less-dense sedimentary rocks underneath the water, you're going to wind up balancing them out with a shallower water column, while if you assume denser rocks, you'll infer deeper water.&lt;/p&gt;
-&lt;p&gt;Jamin Greenbaum recently published a paper&lt;sup id="sf-touring-utigs-airplane-20-back"&gt;&lt;a href="#sf-touring-utigs-airplane-20" title=" Greenbaum, J. S., Blankenship, D. D., Young, D. A., Richter, T. G., Aitken, A. R. A., Legresy, B., Schroeder, D. M., Roberts, J. L., Warner, R. C., van Ommen, T. D., and Siegert, M. J. (2015). Increased Ocean Access to Totten Glacier, East Antarctica. Nature Geos. " class="simple-footnote"&gt;20&lt;/a&gt;&lt;/sup&gt;
+&lt;p&gt;Jamin Greenbaum recently published a paper&lt;sup id="sf-touring-utigs-airplane-19-back"&gt;&lt;a title=" Greenbaum, J. S., Blankenship, D. D., Young, D. A., Richter, T. G., Aitken, A. R. A., Legresy, B., Schroeder, D. M., Roberts, J. L., Warner, R. C., van Ommen, T. D., and Siegert, M. J. (2015). Increased Ocean Access to Totten Glacier, East Antarctica. Nature Geos. " class="simple-footnote" href="#sf-touring-utigs-airplane-19"&gt;19&lt;/a&gt;&lt;/sup&gt;
 improving the estimates of the cavity shape underneath the Totten Ice Shelf.
 His inferred geometry is shown below on the left.&lt;/p&gt;
-&lt;p&gt;&lt;img src="/images/platform_tour/Greenbaum2015.jpg" alt="Totten bathymetry from Greenbaum et al. 2015" title="Totten bathymetry from Greenbaum et al. 2015"&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img title="Totten bathymetry from Greenbaum et al. 2015" src="/images/platform_tour/Greenbaum2015.jpg" alt="Totten bathymetry from Greenbaum et al. 2015"&gt;&lt;/p&gt;
 &lt;p&gt;This was an important result because he showed that the ocean is deep enough that warm deep water is able to enter the cavity, which could explain why the glacier's surface is lowering so quickly.
-It was also a significant improvement over the previous bathymetry - in the figure above right, you can see the old best-guess bathymetry as a dashed line.&lt;/p&gt;
+It was also a significant improvement over the previous bathymetry - in the right plots of the above figure, you can see the old best-guess bathymetry as a dashed line.&lt;/p&gt;
 &lt;h4&gt;Magnetics&lt;/h4&gt;
-&lt;p&gt;&lt;img src="/images/platform_tour/mag_boom.jpg" alt="Magnetometer boom" title="Magnetometer boom, getting that instrument as far away as possible from all the metal on the plane!"&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img title="Magnetometer boom, getting that instrument as far away as possible from all the metal on the plane!" src="/images/platform_tour/mag_boom.jpg" alt="Magnetometer boom"&gt;&lt;/p&gt;
 &lt;p&gt;We have two magnetometers on the plane.
 One is mounted inside near the cameras and and measures the 3 dimensional magnetic field vector.
 A much more precise one measuring only the magnitude is stuck way at the end of the tail boom, shown above.
 The idea behind this arrangement is that we want to understand how the airplane's orientation and interaction with the earth's magnetic field affects the measured field (you can see turns very clearly in the interior data), but we want the most accurate reading possible, taken as far away as possible from all the metal in the plane.&lt;/p&gt;
-&lt;p&gt;&lt;img src="/images/platform_tour/base_mag.jpg" alt="basemag" title="Magnetometer setup back at camp" width="300"&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img title="Magnetometer setup back at camp" width="300" src="/images/platform_tour/base_mag.jpg" alt="basemag"&gt;&lt;/p&gt;
 &lt;p&gt;We also record the magnetic field at a base station.
 The above image shows the magnetometer housing and its solar charger.
-Data from this is used to determine when to fly (it gets noisier at certain times of day) and then compared with the in-flight data to determine an anomaly.
+Data from this is used both to determine when to fly (it gets noisier at certain times of day) and used to correct the in-flight data to determine whether an anomaly is due to geological features or the earth's magnetic field changing in response to solar activity.
 Any signal that's different between the base and the airplane can be assumed to be from local topography, not the earth's temporally varying magnetic field.&lt;/p&gt;
 &lt;p&gt;Igneous rocks tend to be magnetic, with their internal field aligned with what the earth's field was when the rock formed, while ice and sedimentary rocks are not magnetic.
 This means that we can figure out what type of rocks are underneath the ice based on the magnetic signal that we observe!
@@ -139,26 +704,26 @@ This matches very well with other observations indicating that the ice sheet is 
 If something's magnetic, you know that it's denser than sediments would be, and anything that helps you constrain the density model will improve the gravity inversion.
 Depth can be inferred from the signal's gradient - the deeper a feature is, the smoother the resulting signal will be.&lt;/p&gt;
 &lt;h4&gt;Cameras&lt;/h4&gt;
-&lt;p&gt;&lt;img src="/images/platform_tour/cam_las_windows.jpg" alt="Image of bottom of airplane, with las and cam labeled. If can see it, also label where HF antenna comes out" title="Image of bottom of airplane, with las and cam labeled. If can see it, also label where HF antenna comes out"&gt;&lt;/p&gt;
-&lt;p&gt;We don't use camera data directly to answer any science questions,&lt;sup id="sf-touring-utigs-airplane-21-back"&gt;&lt;a href="#sf-touring-utigs-airplane-21" title=" We have recently learned that whale biologists are seriously interested in our data any time we fly over open water (which we do with some frequency for gravity data). It turns out that they've been fielding airplanes just to get the same type of imagery that we collect as a routine part of our operations. " class="simple-footnote"&gt;21&lt;/a&gt;&lt;/sup&gt; but the pictures are useful for providing context for other data.
+&lt;p&gt;&lt;img title="Image of bottom of airplane, with las and cam labeled. If can see it, also label where HF antenna comes out" src="/images/platform_tour/cam_las_windows.jpg" alt="Image of bottom of airplane, with las and cam labeled. If can see it, also label where HF antenna comes out"&gt;&lt;/p&gt;
+&lt;p&gt;We don't use camera data directly to answer any science questions,&lt;sup id="sf-touring-utigs-airplane-20-back"&gt;&lt;a title=" We have recently learned that whale biologists are seriously interested in our data any time we fly over open water (which we do with some frequency for gravity data). It turns out that they've been fielding airplanes just to get the same type of imagery that we collect as a routine part of our operations. " class="simple-footnote" href="#sf-touring-utigs-airplane-20"&gt;20&lt;/a&gt;&lt;/sup&gt; but the pictures are useful for providing context for other data.
 This has included trying to figure out why we were missing laser data: Was it cloudy out? Were we in a heavily crevassed region? Were we over water?
 It has also been used to validate radar-derived surface roughness estimates.
-The below figure is from a paper by Cyril Grima&lt;sup id="sf-touring-utigs-airplane-22-back"&gt;&lt;a href="#sf-touring-utigs-airplane-22" title=" Grima, C., Schroeder, D. M., Blankenship, D. D., and Young, D. A. (2014a). Planetary landing-zone reconnaissance using ice-penetrating radar data: Concept validation in Antarctica. Planetary and Space Science. " class="simple-footnote"&gt;22&lt;/a&gt;&lt;/sup&gt;
+The below figure is from a paper by Cyril Grima&lt;sup id="sf-touring-utigs-airplane-21-back"&gt;&lt;a title=" Grima, C., Schroeder, D. M., Blankenship, D. D., and Young, D. A. (2014a). Planetary landing-zone reconnaissance using ice-penetrating radar data: Concept validation in Antarctica. Planetary and Space Science. " class="simple-footnote" href="#sf-touring-utigs-airplane-21"&gt;21&lt;/a&gt;&lt;/sup&gt;
 and shows roughness parameters derived from a statistical examination of the returned radar pulse shape.
 The extracted parameters show an excellent qualitative agreement with the imagery.&lt;/p&gt;
-&lt;p&gt;&lt;img src="/images/platform_tour/Grima2014_roughness1.jpg" alt="Qualitative validation of surface roughness from Grima et al. 2014" title="Qualitative validation of surface roughness from Grima et al. 2014" width="340"&gt;
-&lt;img src="/images/platform_tour/Grima2014_roughness2.jpg" alt="Qualitative validation of surface roughness from Grima et al. 2014" title="Qualitative validation of surface roughness from Grima et al. 2014" width="340"&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img title="Qualitative validation of surface roughness from Grima et al. 2014" width="340" src="/images/platform_tour/Grima2014_roughness1.jpg" alt="Qualitative validation of surface roughness from Grima et al. 2014"&gt;
+&lt;img title="Qualitative validation of surface roughness from Grima et al. 2014" width="340" src="/images/platform_tour/Grima2014_roughness2.jpg" alt="Qualitative validation of surface roughness from Grima et al. 2014"&gt;&lt;/p&gt;
 &lt;h4&gt;Laser altimetry&lt;/h4&gt;
 &lt;p&gt;We use lasers to very accurately measure the surface elevation of the ice sheet.
 Even where it is changing most rapidly, these changes are measured in meters per year, and our goal is to be able to detect changes of 5cm per year.
-From 2003-2009, ICESat collected laser altimetry from space, leading to a detailed map of where elevations are changing across Antarctica and Greenland.&lt;sup id="sf-touring-utigs-airplane-23-back"&gt;&lt;a href="#sf-touring-utigs-airplane-23" title=" Pritchard, H. D., Arthern, R. J., Vaughan, D. G., and Edwards, L. A. (2009). Extensive dynamic thinning on the margins of the Greenland and Antarctic ice sheets. Nature, 461(7266):971– 975. /ref." class="simple-footnote"&gt;23&lt;/a&gt;&lt;/sup&gt;&lt;/p&gt;
-&lt;p&gt;&lt;img src="/images/platform_tour/Pritchard2009.jpg" alt="ICESat elevation changes, Pritchard et al. 2009" title="ICESat elevation changes, Pritchard et al. 2009"&gt;&lt;/p&gt;
+From 2003-2009, ICESat collected laser altimetry from space, leading to a detailed map of where elevations are changing across Antarctica and Greenland.&lt;sup id="sf-touring-utigs-airplane-22-back"&gt;&lt;a title=" Pritchard, H. D., Arthern, R. J., Vaughan, D. G., and Edwards, L. A. (2009). Extensive dynamic thinning on the margins of the Greenland and Antarctic ice sheets. Nature, 461(7266):971– 975. /ref." class="simple-footnote" href="#sf-touring-utigs-airplane-22"&gt;22&lt;/a&gt;&lt;/sup&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img title="ICESat elevation changes, Pritchard et al. 2009" src="/images/platform_tour/Pritchard2009.jpg" alt="ICESat elevation changes, Pritchard et al. 2009"&gt;&lt;/p&gt;
 &lt;p&gt;However, ICESat failed in 2009, and its replacement has not yet been launched.
 So, a number of groups (including ours) have been reflying ICESat tracks in an effort to extend the temporal record and hopefully connect it to ICESat II.
-Our system, ALAMO&lt;sup id="sf-touring-utigs-airplane-24-back"&gt;&lt;a href="#sf-touring-utigs-airplane-24" title=" Young, D. A., Lindzey, L. E., Blankenship, D. D., Greenbaum, J. S., de Gorordo, A. G., Kempf, S. D., Roberts, J. L., Warner, R. C., van Ommen, T., Siegert, M. J., and le Meur, E. (2014). Land-ice elevation changes from photon counting swath altimetry: First applications over the Antarctic ice sheet. Journal of Glaciology. " class="simple-footnote"&gt;24&lt;/a&gt;&lt;/sup&gt;, includes an off-the-shelf single-beam Riegl altimeter, which is well characterized and used to determine the range to the surface.
+Our system, ALAMO&lt;sup id="sf-touring-utigs-airplane-23-back"&gt;&lt;a title=" Young, D. A., Lindzey, L. E., Blankenship, D. D., Greenbaum, J. S., de Gorordo, A. G., Kempf, S. D., Roberts, J. L., Warner, R. C., van Ommen, T., Siegert, M. J., and le Meur, E. (2014). Land-ice elevation changes from photon counting swath altimetry: First applications over the Antarctic ice sheet. Journal of Glaciology. " class="simple-footnote" href="#sf-touring-utigs-airplane-23"&gt;23&lt;/a&gt;&lt;/sup&gt;, includes an off-the-shelf single-beam Riegl altimeter, which is well characterized and used to determine the range to the surface.
 We also have a more temperamental scanning photon counting lidar that is a protopype of what will be on ICESat II.
 Its data points are dense enough to map individual buildings in McMurdo (below), but we mostly use its data to determine the ice's surface slope, which is important when trying to compare two slightly offset repeat flights of the same line.&lt;/p&gt;
-&lt;p&gt;&lt;img src="/images/platform_tour/mcm_411_375.png" alt="PCL data from Flying over McMurdo" title="PCL data from Flying over McMurdo"&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img title="PCL data from Flying over McMurdo" src="/images/platform_tour/mcm_411_375.png" alt="PCL data from Flying over McMurdo"&gt;&lt;/p&gt;
 &lt;h4&gt;GPS, IMU&lt;/h4&gt;
 &lt;p&gt;We have 4 GPS antennas mounted outside the plane: at the center, the tail, and on each wing.
 These are used to get absolute position in space.
@@ -171,7 +736,7 @@ For example, the laser altimetry measurements are basically a 600m lever arm, an
  No major publications result from this, but I did use them to validate a correction for the speed of light in air, which primarily depends on pressure and temperature.
 I was utterly dumbfounded when I realized that the difference in conditions between the coast and inland domes could result in a 10cm bias in the altimetry data!
 We don't consistently collect temperature and pressure data, but we always know our altitude.
-So, I needed to check that an altitude-based approximation to the speed of light would remove any geographical bias in our data.&lt;sup id="sf-touring-utigs-airplane-25-back"&gt;&lt;a href="#sf-touring-utigs-airplane-25" title=" I was impressed by my research group's data management discipline when I was able to dig up and painlessly use 20+ year old data to do this analysis! " class="simple-footnote"&gt;25&lt;/a&gt;&lt;/sup&gt;&lt;/p&gt;
+So, I needed to check that an altitude-based approximation to the speed of light would remove any geographical bias in our data.&lt;sup id="sf-touring-utigs-airplane-24-back"&gt;&lt;a title=" I was impressed by my research group's data management discipline when I was able to dig up and painlessly use 20+ year old data to do this analysis! " class="simple-footnote" href="#sf-touring-utigs-airplane-24"&gt;24&lt;/a&gt;&lt;/sup&gt;&lt;/p&gt;
 &lt;script type="text/javascript"&gt;if (!document.getElementById('mathjaxscript_pelican_#%@#$@#')) {
     var align = "center",
         indent = "0em",
@@ -230,68 +795,66 @@ So, I needed to check that an altitude-based approximation to the speed of light
 }
 &lt;/script&gt;&lt;ol class="simple-footnotes"&gt;&lt;li id="sf-touring-utigs-airplane-1"&gt;
 KBA operates most of the non-military planes in Antarctica.
- &lt;a href="#sf-touring-utigs-airplane-1-back" class="simple-footnote-back"&gt;↩&lt;/a&gt;&lt;/li&gt;&lt;li id="sf-touring-utigs-airplane-2"&gt;
+ &lt;a class="simple-footnote-back" href="#sf-touring-utigs-airplane-1-back"&gt;↩&lt;/a&gt;&lt;/li&gt;&lt;li id="sf-touring-utigs-airplane-2"&gt;
 BEDMAP2 was an effort to integrate all the available data into maps of Antarctica's bedrock and ice thickness: Fretwell, P., Pritchard, H. D., Vaughan, D. G., Bamber, J. L., Barrand, N. E., Bell, R., Bianchi, C., Bingham, R. G., Blankenship, D. D., Casassa, G., and Others (2013). Bedmap2: improved ice bed, surface and thickness datasets for Antarctica. The Cryosphere, 7(1):375–393.
- &lt;a href="#sf-touring-utigs-airplane-2-back" class="simple-footnote-back"&gt;↩&lt;/a&gt;&lt;/li&gt;&lt;li id="sf-touring-utigs-airplane-3"&gt;
+ &lt;a class="simple-footnote-back" href="#sf-touring-utigs-airplane-2-back"&gt;↩&lt;/a&gt;&lt;/li&gt;&lt;li id="sf-touring-utigs-airplane-3"&gt;
 There may still be such places, since I haven't seen an updated map, but I was involved in a project that filled in the biggest hole.
- &lt;a href="#sf-touring-utigs-airplane-3-back" class="simple-footnote-back"&gt;↩&lt;/a&gt;&lt;/li&gt;&lt;li id="sf-touring-utigs-airplane-4"&gt;
+ &lt;a class="simple-footnote-back" href="#sf-touring-utigs-airplane-3-back"&gt;↩&lt;/a&gt;&lt;/li&gt;&lt;li id="sf-touring-utigs-airplane-4"&gt;
 I'll interchangeably refer to these airplanes as DC-3s and Baslers.
 DC-3 was the original designation; Basler is the name of a company that takes these old airplanes and entirely refurbishes them for Arctic/Antarctic work.
- &lt;a href="#sf-touring-utigs-airplane-4-back" class="simple-footnote-back"&gt;↩&lt;/a&gt;&lt;/li&gt;&lt;li id="sf-touring-utigs-airplane-5"&gt;
+ &lt;a class="simple-footnote-back" href="#sf-touring-utigs-airplane-4-back"&gt;↩&lt;/a&gt;&lt;/li&gt;&lt;li id="sf-touring-utigs-airplane-5"&gt;
 JKB, the airplane shown in many off these photos, was used in WWII.
- &lt;a href="#sf-touring-utigs-airplane-5-back" class="simple-footnote-back"&gt;↩&lt;/a&gt;&lt;/li&gt;&lt;li id="sf-touring-utigs-airplane-6"&gt;
-The boat is obviously preferable and cheaper, but our field seasons typically begin in October or November when there's still too much sea ice for even an icebreaker to make it to the stations.
- &lt;a href="#sf-touring-utigs-airplane-6-back" class="simple-footnote-back"&gt;↩&lt;/a&gt;&lt;/li&gt;&lt;li id="sf-touring-utigs-airplane-7"&gt;
-I thought the C-17 was uncomfortable until I got to ride in the LC-130. Get friendly with the people across from you! If you're really lucky, you might get a spot in the Australian Airbus, where you're served real food and have a whole row of seats to yourself. At least on the military planes you can visit the cockpit, but if you want a view from the cabin, you'll have to wait your turn at one of about 4 tiny windows.
- &lt;a href="#sf-touring-utigs-airplane-7-back" class="simple-footnote-back"&gt;↩&lt;/a&gt;&lt;/li&gt;&lt;li id="sf-touring-utigs-airplane-8"&gt;
+ &lt;a class="simple-footnote-back" href="#sf-touring-utigs-airplane-5-back"&gt;↩&lt;/a&gt;&lt;/li&gt;&lt;li id="sf-touring-utigs-airplane-6"&gt;
 Sadly, it would appear that this temperamental instrument is only collecting noise in this image.
- &lt;a href="#sf-touring-utigs-airplane-8-back" class="simple-footnote-back"&gt;↩&lt;/a&gt;&lt;/li&gt;&lt;li id="sf-touring-utigs-airplane-9"&gt;
+ &lt;a class="simple-footnote-back" href="#sf-touring-utigs-airplane-6-back"&gt;↩&lt;/a&gt;&lt;/li&gt;&lt;li id="sf-touring-utigs-airplane-7"&gt;
     In addition to the DC-3s and Twin Otters, other groups have used LC-130s and P-3s to collect radar sounding data.
 They're bigger, fly faster, and burn more fuel.
-     &lt;a href="#sf-touring-utigs-airplane-9-back" class="simple-footnote-back"&gt;↩&lt;/a&gt;&lt;/li&gt;&lt;li id="sf-touring-utigs-airplane-10"&gt;
+     &lt;a class="simple-footnote-back" href="#sf-touring-utigs-airplane-7-back"&gt;↩&lt;/a&gt;&lt;/li&gt;&lt;li id="sf-touring-utigs-airplane-8"&gt;
 This varies dramatically with elevation; we get significantly better than this flying over the Antarctic Plateau, and worse around the coast.
- &lt;a href="#sf-touring-utigs-airplane-10-back" class="simple-footnote-back"&gt;↩&lt;/a&gt;&lt;/li&gt;&lt;li id="sf-touring-utigs-airplane-11"&gt;
+ &lt;a class="simple-footnote-back" href="#sf-touring-utigs-airplane-8-back"&gt;↩&lt;/a&gt;&lt;/li&gt;&lt;li id="sf-touring-utigs-airplane-9"&gt;
     If you're at a coastal station, fuel is brought in on an ice breaker, and is less of a constraint.
 If you're inland, that fuel is either brought in via a traverse (huge logistical operation) or flown in on LC-130s.
 Last season, at WAIS divide, the United States Antarctic Program used LC-130s to bring us fuel.
 They burn 3000 pounds of fuel an hour, and each delivery run from McMurdo provides enough fuel for ~3 of our survey flights.
-     &lt;a href="#sf-touring-utigs-airplane-11-back" class="simple-footnote-back"&gt;↩&lt;/a&gt;&lt;/li&gt;&lt;li id="sf-touring-utigs-airplane-12"&gt;
+     &lt;a class="simple-footnote-back" href="#sf-touring-utigs-airplane-9-back"&gt;↩&lt;/a&gt;&lt;/li&gt;&lt;li id="sf-touring-utigs-airplane-10"&gt;
     Endurance is primarily a function of how much fuel can be carried.
 The upper limit is neither the volume of the tanks nor the maximum weight that can get airborne - it's the maximum weight that the airplane can safely land with, if an emergency landing were required just after takeoff.
 Nobody is going to be happy if you dump fuel over Antarctica.
 This means that each additional passenger costs ~15 minutes of extremely expensive survey time, and has been known to be a factor in deciding which additional instruments to install.
 Do you want the full suite of available instruments, or do you want an additional 30 minutes of survey time in order to reach that geologically interesting hole in the map?
-     &lt;a href="#sf-touring-utigs-airplane-12-back" class="simple-footnote-back"&gt;↩&lt;/a&gt;&lt;/li&gt;&lt;li id="sf-touring-utigs-airplane-13"&gt;
+     &lt;a class="simple-footnote-back" href="#sf-touring-utigs-airplane-10-back"&gt;↩&lt;/a&gt;&lt;/li&gt;&lt;li id="sf-touring-utigs-airplane-11"&gt;
     Pilots have legally- and contractually-mandated maximum duty day lengths, days off, maximum hours in the air per day, and rolling weekly/monthly flight hour maximums.
-     &lt;a href="#sf-touring-utigs-airplane-13-back" class="simple-footnote-back"&gt;↩&lt;/a&gt;&lt;/li&gt;&lt;li id="sf-touring-utigs-airplane-14"&gt;
+     &lt;a class="simple-footnote-back" href="#sf-touring-utigs-airplane-11-back"&gt;↩&lt;/a&gt;&lt;/li&gt;&lt;li id="sf-touring-utigs-airplane-12"&gt;
 This was … tough.
 The field camp was at an ice divide, meaning that weather systems could blow in from any of three directions, with very hard-to-predict timing.
- &lt;a href="#sf-touring-utigs-airplane-14-back" class="simple-footnote-back"&gt;↩&lt;/a&gt;&lt;/li&gt;&lt;li id="sf-touring-utigs-airplane-15"&gt;
+ &lt;a class="simple-footnote-back" href="#sf-touring-utigs-airplane-12-back"&gt;↩&lt;/a&gt;&lt;/li&gt;&lt;li id="sf-touring-utigs-airplane-13"&gt;
 That was before GPS, so the positioning was only good to ~5km, and the radar data was recorded photographically, not digitally! The technology didn't exist to digitize the received signals and write them to disk like we do now.
- &lt;a href="#sf-touring-utigs-airplane-15-back" class="simple-footnote-back"&gt;↩&lt;/a&gt;&lt;/li&gt;&lt;li id="sf-touring-utigs-airplane-16"&gt;
+ &lt;a class="simple-footnote-back" href="#sf-touring-utigs-airplane-13-back"&gt;↩&lt;/a&gt;&lt;/li&gt;&lt;li id="sf-touring-utigs-airplane-14"&gt;
 Fretwell, P., Pritchard, H. D., Vaughan, D. G., Bamber, J. L., Barrand, N. E., Bell, R., Bianchi, C., Bingham, R. G., Blankenship, D. D., Casassa, G., and Others (2013). Bedmap2: improved ice bed, surface and thickness datasets for Antarctica. The Cryosphere, 7(1):375–393.
- &lt;a href="#sf-touring-utigs-airplane-16-back" class="simple-footnote-back"&gt;↩&lt;/a&gt;&lt;/li&gt;&lt;li id="sf-touring-utigs-airplane-17"&gt;
+ &lt;a class="simple-footnote-back" href="#sf-touring-utigs-airplane-14-back"&gt;↩&lt;/a&gt;&lt;/li&gt;&lt;li id="sf-touring-utigs-airplane-15"&gt;
 NASA has produced some very fun visualizations of the improvement bewteen BEDMAP and BEDMAP2, as well as the ice surface / bed topography.
 We collected some of the data as a part of NASA's Operation Ice Bridge (mostly in East Antarctica).
 &lt;a href="http://www.nasa.gov/topics/earth/features/antarctic-map.html"&gt;link&lt;/a&gt;
- &lt;a href="#sf-touring-utigs-airplane-17-back" class="simple-footnote-back"&gt;↩&lt;/a&gt;&lt;/li&gt;&lt;li id="sf-touring-utigs-airplane-18"&gt;
+ &lt;a class="simple-footnote-back" href="#sf-touring-utigs-airplane-15-back"&gt;↩&lt;/a&gt;&lt;/li&gt;&lt;li id="sf-touring-utigs-airplane-16"&gt;
 Of course, it was obsolete as soon as it came out, as everybody continues to collect more data.
- &lt;a href="#sf-touring-utigs-airplane-18-back" class="simple-footnote-back"&gt;↩&lt;/a&gt;&lt;/li&gt;&lt;li id="sf-touring-utigs-airplane-19"&gt;
+ &lt;a class="simple-footnote-back" href="#sf-touring-utigs-airplane-16-back"&gt;↩&lt;/a&gt;&lt;/li&gt;&lt;li id="sf-touring-utigs-airplane-17"&gt;
+For context, the gravity field changes by ~300uGal/m as you get farther from the center of the earth, and 1G = 9.8m/s2 = 980Gal. Stationary instruments on the ground can measure to a precision of ~5uGal.
+ &lt;a class="simple-footnote-back" href="#sf-touring-utigs-airplane-17-back"&gt;↩&lt;/a&gt;&lt;/li&gt;&lt;li id="sf-touring-utigs-airplane-18"&gt;
 For a fixed sampling rate, the slower you fly the better your data will be. We're excited about the potential for mounting gravimeters on helicopters to get even higher-resolution data! Lower is also better, because you're closer to the source.
- &lt;a href="#sf-touring-utigs-airplane-19-back" class="simple-footnote-back"&gt;↩&lt;/a&gt;&lt;/li&gt;&lt;li id="sf-touring-utigs-airplane-20"&gt;
+ &lt;a class="simple-footnote-back" href="#sf-touring-utigs-airplane-18-back"&gt;↩&lt;/a&gt;&lt;/li&gt;&lt;li id="sf-touring-utigs-airplane-19"&gt;
 Greenbaum, J. S., Blankenship, D. D., Young, D. A., Richter, T. G., Aitken, A. R. A., Legresy, B., Schroeder, D. M., Roberts, J. L., Warner, R. C., van Ommen, T. D., and Siegert, M. J. (2015). Increased Ocean Access to Totten Glacier, East Antarctica. Nature Geos.
- &lt;a href="#sf-touring-utigs-airplane-20-back" class="simple-footnote-back"&gt;↩&lt;/a&gt;&lt;/li&gt;&lt;li id="sf-touring-utigs-airplane-21"&gt;
+ &lt;a class="simple-footnote-back" href="#sf-touring-utigs-airplane-19-back"&gt;↩&lt;/a&gt;&lt;/li&gt;&lt;li id="sf-touring-utigs-airplane-20"&gt;
 We have recently learned that whale biologists are seriously interested in our data any time we fly over open water (which we do with some frequency for gravity data).
 It turns out that they've been fielding airplanes &lt;em&gt;just&lt;/em&gt; to get the same type of imagery that we collect as a routine part of our operations.
- &lt;a href="#sf-touring-utigs-airplane-21-back" class="simple-footnote-back"&gt;↩&lt;/a&gt;&lt;/li&gt;&lt;li id="sf-touring-utigs-airplane-22"&gt;
+ &lt;a class="simple-footnote-back" href="#sf-touring-utigs-airplane-20-back"&gt;↩&lt;/a&gt;&lt;/li&gt;&lt;li id="sf-touring-utigs-airplane-21"&gt;
 Grima, C., Schroeder, D. M., Blankenship, D. D., and Young, D. A. (2014a). Planetary landing-zone reconnaissance using ice-penetrating radar data: Concept validation in Antarctica. Planetary and Space Science.
- &lt;a href="#sf-touring-utigs-airplane-22-back" class="simple-footnote-back"&gt;↩&lt;/a&gt;&lt;/li&gt;&lt;li id="sf-touring-utigs-airplane-23"&gt;
+ &lt;a class="simple-footnote-back" href="#sf-touring-utigs-airplane-21-back"&gt;↩&lt;/a&gt;&lt;/li&gt;&lt;li id="sf-touring-utigs-airplane-22"&gt;
 Pritchard, H. D., Arthern, R. J., Vaughan, D. G., and Edwards, L. A. (2009). Extensive dynamic thinning on the margins of the Greenland and Antarctic ice sheets. Nature, 461(7266):971– 975.
-&lt;a href="below"&gt;/ref&lt;/a&gt;. &lt;a href="#sf-touring-utigs-airplane-23-back" class="simple-footnote-back"&gt;↩&lt;/a&gt;&lt;/li&gt;&lt;li id="sf-touring-utigs-airplane-24"&gt;
+&lt;a href="below"&gt;/ref&lt;/a&gt;. &lt;a class="simple-footnote-back" href="#sf-touring-utigs-airplane-22-back"&gt;↩&lt;/a&gt;&lt;/li&gt;&lt;li id="sf-touring-utigs-airplane-23"&gt;
 Young, D. A., Lindzey, L. E., Blankenship, D. D., Greenbaum, J. S., de Gorordo, A. G., Kempf, S. D., Roberts, J. L., Warner, R. C., van Ommen, T., Siegert, M. J., and le Meur, E. (2014). Land-ice elevation changes from photon counting swath altimetry: First applications over the Antarctic ice sheet. Journal of Glaciology.
- &lt;a href="#sf-touring-utigs-airplane-24-back" class="simple-footnote-back"&gt;↩&lt;/a&gt;&lt;/li&gt;&lt;li id="sf-touring-utigs-airplane-25"&gt;
+ &lt;a class="simple-footnote-back" href="#sf-touring-utigs-airplane-23-back"&gt;↩&lt;/a&gt;&lt;/li&gt;&lt;li id="sf-touring-utigs-airplane-24"&gt;
 I was impressed by my research group's data management discipline when I was able to dig up and painlessly use 20+ year old data to do this analysis!
- &lt;a href="#sf-touring-utigs-airplane-25-back" class="simple-footnote-back"&gt;↩&lt;/a&gt;&lt;/li&gt;&lt;/ol&gt;</summary></entry><entry><title>Penguins Visit Zhongshan</title><link href="/blog/2016/01/20/penguins-visit-zhongshan/" rel="alternate"></link><updated>2016-01-20T20:00:00-06:00</updated><author><name>Laura Lindzey</name></author><id>tag:,2016-01-20:blog/2016/01/20/penguins-visit-zhongshan/</id><summary type="html">&lt;p&gt;&lt;img src="/images/zhongshan_penguins/zhongshan_penguins.jpg" alt="""" title=""""&gt;&lt;/p&gt;
+ &lt;a class="simple-footnote-back" href="#sf-touring-utigs-airplane-24-back"&gt;↩&lt;/a&gt;&lt;/li&gt;&lt;/ol&gt;</summary></entry><entry><title>Penguins Visit Zhongshan</title><link href="/blog/2016/01/20/penguins-visit-zhongshan/" rel="alternate"></link><updated>2016-01-20T20:00:00-06:00</updated><author><name>Laura Lindzey</name></author><id>tag:,2016-01-20:blog/2016/01/20/penguins-visit-zhongshan/</id><summary type="html">&lt;p&gt;&lt;img src="/images/zhongshan_penguins/zhongshan_penguins.jpg" alt="""" title=""""&gt;&lt;/p&gt;
 &lt;p&gt;I woke up to hear the magic word “penguins” in the dorm hallway, so I grabbed my camera and ran down to the shore, which led to a lovely afternoon spent following them around the station.
 This was all in accordance with my research group's official "penguin policy" stating that penguin sightings have priority over anything but a flight.&lt;/p&gt;
 
@@ -397,16 +960,6 @@ It is way more common for the penguins to aggressively chase off the skuas.&lt;/
 &lt;/thead&gt;
 &lt;tbody&gt;
 &lt;tr&gt;
-&lt;td align="center"&gt;(none)&lt;/td&gt;
-&lt;td align="center"&gt;Esc&lt;/td&gt;
-&lt;td align="center"&gt;enter normal/command mode&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td align="center"&gt;(none)&lt;/td&gt;
-&lt;td align="center"&gt;i&lt;/td&gt;
-&lt;td align="center"&gt;before current character, drop into insert mode&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
 &lt;td align="center"&gt;Ctrl&amp;#8209;x&amp;nbsp;Ctrl&amp;#8209;c&lt;/td&gt;
 &lt;td align="center"&gt;:q&lt;/td&gt;
 &lt;td align="center"&gt;quit&lt;/td&gt;
@@ -432,29 +985,29 @@ It is way more common for the penguins to aggressively chase off the skuas.&lt;/
 &lt;td align="center"&gt;open file; use tab to cycle through existing files&lt;/td&gt;
 &lt;/tr&gt;
 &lt;tr&gt;
-&lt;td align="center"&gt;Ctrl-a&lt;/td&gt;
-&lt;td align="center"&gt;^&lt;/td&gt;
-&lt;td align="center"&gt;go to start of line&lt;/td&gt;
+&lt;td align="center"&gt;(none)&lt;/td&gt;
+&lt;td align="center"&gt;Esc&lt;/td&gt;
+&lt;td align="center"&gt;enter normal/command mode&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td align="center"&gt;(none)&lt;/td&gt;
+&lt;td align="center"&gt;i&lt;/td&gt;
+&lt;td align="center"&gt;drop into insert mode before current character&lt;/td&gt;
 &lt;/tr&gt;
 &lt;tr&gt;
 &lt;td align="center"&gt;&lt;/td&gt;
 &lt;td align="center"&gt;I&lt;/td&gt;
-&lt;td align="center"&gt;go to start of line, drop into insert mode&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td align="center"&gt;Ctrl-e&lt;/td&gt;
-&lt;td align="center"&gt;$&lt;/td&gt;
-&lt;td align="center"&gt;go to end of line&lt;/td&gt;
+&lt;td align="center"&gt;drop into insert mode at start of line&lt;/td&gt;
 &lt;/tr&gt;
 &lt;tr&gt;
 &lt;td align="center"&gt;&lt;/td&gt;
 &lt;td align="center"&gt;a&lt;/td&gt;
-&lt;td align="center"&gt;after current character, drop into insert mode&lt;/td&gt;
+&lt;td align="center"&gt;drop into insert mode after current character&lt;/td&gt;
 &lt;/tr&gt;
 &lt;tr&gt;
 &lt;td align="center"&gt;&lt;/td&gt;
 &lt;td align="center"&gt;A&lt;/td&gt;
-&lt;td align="center"&gt;end of line, drop into insert mode&lt;/td&gt;
+&lt;td align="center"&gt;drop into insert mode at end of line&lt;/td&gt;
 &lt;/tr&gt;
 &lt;tr&gt;
 &lt;td align="center"&gt;&lt;/td&gt;
@@ -467,6 +1020,21 @@ It is way more common for the penguins to aggressively chase off the skuas.&lt;/
 &lt;td align="center"&gt;insert line above, drop into insert mode&lt;/td&gt;
 &lt;/tr&gt;
 &lt;tr&gt;
+&lt;td align="center"&gt;Ctrl-a&lt;/td&gt;
+&lt;td align="center"&gt;0&lt;/td&gt;
+&lt;td align="center"&gt;go to start of line&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td align="center"&gt;&lt;/td&gt;
+&lt;td align="center"&gt;^&lt;/td&gt;
+&lt;td align="center"&gt;go to first non-whitespace character in line&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td align="center"&gt;Ctrl-e&lt;/td&gt;
+&lt;td align="center"&gt;$&lt;/td&gt;
+&lt;td align="center"&gt;go to end of line&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
 &lt;td align="center"&gt;Ctrl-n&lt;/td&gt;
 &lt;td align="center"&gt;j&lt;/td&gt;
 &lt;td align="center"&gt;next line&lt;/td&gt;
@@ -477,14 +1045,44 @@ It is way more common for the penguins to aggressively chase off the skuas.&lt;/
 &lt;td align="center"&gt;prev line&lt;/td&gt;
 &lt;/tr&gt;
 &lt;tr&gt;
-&lt;td align="center"&gt;&lt;/td&gt;
+&lt;td align="center"&gt;Ctrl-b&lt;/td&gt;
 &lt;td align="center"&gt;h&lt;/td&gt;
 &lt;td align="center"&gt;prev character&lt;/td&gt;
 &lt;/tr&gt;
 &lt;tr&gt;
-&lt;td align="center"&gt;&lt;/td&gt;
+&lt;td align="center"&gt;Ctrl-f&lt;/td&gt;
 &lt;td align="center"&gt;l&lt;/td&gt;
 &lt;td align="center"&gt;next character&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td align="center"&gt;Meta-f&lt;/td&gt;
+&lt;td align="center"&gt;w&lt;/td&gt;
+&lt;td align="center"&gt;move forward one word&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td align="center"&gt;&lt;/td&gt;
+&lt;td align="center"&gt;W&lt;/td&gt;
+&lt;td align="center"&gt;move forward one WORD&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td align="center"&gt;Meta-b&lt;/td&gt;
+&lt;td align="center"&gt;b&lt;/td&gt;
+&lt;td align="center"&gt;move backward one word (leaves cursor on first character)&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td align="center"&gt;&lt;/td&gt;
+&lt;td align="center"&gt;B&lt;/td&gt;
+&lt;td align="center"&gt;move backward one WORD&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td align="center"&gt;&lt;/td&gt;
+&lt;td align="center"&gt;e&lt;/td&gt;
+&lt;td align="center"&gt;move to end of word (leaves cursor on last character)&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td align="center"&gt;&lt;/td&gt;
+&lt;td align="center"&gt;E&lt;/td&gt;
+&lt;td align="center"&gt;move to end of WORD&lt;/td&gt;
 &lt;/tr&gt;
 &lt;tr&gt;
 &lt;td align="center"&gt;Alt-&amp;lt;&lt;/td&gt;
@@ -495,6 +1093,61 @@ It is way more common for the penguins to aggressively chase off the skuas.&lt;/
 &lt;td align="center"&gt;Alt-&amp;gt;&lt;/td&gt;
 &lt;td align="center"&gt;G&lt;/td&gt;
 &lt;td align="center"&gt;end of file&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td align="center"&gt;Meta-r&lt;/td&gt;
+&lt;td align="center"&gt;&lt;/td&gt;
+&lt;td align="center"&gt;cycle between first visible line, middle line, last line&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td align="center"&gt;&lt;/td&gt;
+&lt;td align="center"&gt;H&lt;/td&gt;
+&lt;td align="center"&gt;position cursor at first non-whitespace character of first visible line&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td align="center"&gt;&lt;/td&gt;
+&lt;td align="center"&gt;M&lt;/td&gt;
+&lt;td align="center"&gt;position cursor at first non-whitespace character of middle visible line&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td align="center"&gt;&lt;/td&gt;
+&lt;td align="center"&gt;L&lt;/td&gt;
+&lt;td align="center"&gt;position cursor at first non-whitespace character of last visible line&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td align="center"&gt;Ctrl-v&lt;/td&gt;
+&lt;td align="center"&gt;zt&lt;/td&gt;
+&lt;td align="center"&gt;page down / move line with cursor to top of pane&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td align="center"&gt;Meta-v&lt;/td&gt;
+&lt;td align="center"&gt;zb&lt;/td&gt;
+&lt;td align="center"&gt;page up / move line with cursor to bottom of pane&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td align="center"&gt;&lt;/td&gt;
+&lt;td align="center"&gt;zz&lt;/td&gt;
+&lt;td align="center"&gt;center line with cursor&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td align="center"&gt;Meta-x goto-line #&lt;/td&gt;
+&lt;td align="center"&gt;:# &lt;ret&gt;&lt;/td&gt;
+&lt;td align="center"&gt;go to line #&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td align="center"&gt;&lt;/td&gt;
+&lt;td align="center"&gt;#G&lt;/td&gt;
+&lt;td align="center"&gt;go to line #&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td align="center"&gt;Meta-x column-number-mode&lt;/td&gt;
+&lt;td align="center"&gt;:set ru&lt;/td&gt;
+&lt;td align="center"&gt;Show (line, column) for cursor/point.&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td align="center"&gt;&lt;/td&gt;
+&lt;td align="center"&gt;:set nu&lt;/td&gt;
+&lt;td align="center"&gt;show line numbers in column on the left&lt;/td&gt;
 &lt;/tr&gt;
 &lt;tr&gt;
 &lt;td align="center"&gt;Meta-x 2&lt;/td&gt;
@@ -552,34 +1205,54 @@ It is way more common for the penguins to aggressively chase off the skuas.&lt;/
 &lt;td align="center"&gt;deletes from current position until the second occurrence of '.' (In general, can add numbers&lt;/td&gt;
 &lt;/tr&gt;
 &lt;tr&gt;
-&lt;td align="center"&gt;&lt;/td&gt;
-&lt;td align="center"&gt;yy&lt;/td&gt;
-&lt;td align="center"&gt;yank line&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
 &lt;td align="center"&gt;Ctrl-Space&lt;/td&gt;
 &lt;td align="center"&gt;&lt;/td&gt;
-&lt;td align="center"&gt;select region&lt;/td&gt;
+&lt;td align="center"&gt;set mark&lt;/td&gt;
 &lt;/tr&gt;
 &lt;tr&gt;
 &lt;td align="center"&gt;Ctrl-w&lt;/td&gt;
-&lt;td align="center"&gt;&lt;/td&gt;
-&lt;td align="center"&gt;yank selected region&lt;/td&gt;
+&lt;td align="center"&gt;c[motion]&lt;/td&gt;
+&lt;td align="center"&gt;cut (delete) selected region&lt;/td&gt;
 &lt;/tr&gt;
 &lt;tr&gt;
-&lt;td align="center"&gt;Alt -w&lt;/td&gt;
+&lt;td align="center"&gt;Meta-w&lt;/td&gt;
+&lt;td align="center"&gt;y[motion]&lt;/td&gt;
+&lt;td align="center"&gt;yank (copy) selected region&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
 &lt;td align="center"&gt;&lt;/td&gt;
-&lt;td align="center"&gt;copy selected region&lt;/td&gt;
+&lt;td align="center"&gt;yy&lt;/td&gt;
+&lt;td align="center"&gt;yank entire line&lt;/td&gt;
 &lt;/tr&gt;
 &lt;tr&gt;
 &lt;td align="center"&gt;Ctrl-y&lt;/td&gt;
 &lt;td align="center"&gt;p&lt;/td&gt;
-&lt;td align="center"&gt;paste what you just cut/copied&lt;/td&gt;
+&lt;td align="center"&gt;put (paste) after cursor&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td align="center"&gt;&lt;/td&gt;
+&lt;td align="center"&gt;P&lt;/td&gt;
+&lt;td align="center"&gt;paste before cursor&lt;/td&gt;
 &lt;/tr&gt;
 &lt;tr&gt;
 &lt;td align="center"&gt;Ctrl-_&lt;/td&gt;
 &lt;td align="center"&gt;u&lt;/td&gt;
 &lt;td align="center"&gt;Undo&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td align="center"&gt;&lt;/td&gt;
+&lt;td align="center"&gt;U&lt;/td&gt;
+&lt;td align="center"&gt;Undo all changes to current line&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td align="center"&gt;&lt;/td&gt;
+&lt;td align="center"&gt;Ctrl-r&lt;/td&gt;
+&lt;td align="center"&gt;Redo&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td align="center"&gt;&lt;/td&gt;
+&lt;td align="center"&gt;.&lt;/td&gt;
+&lt;td align="center"&gt;Repeat last command&lt;/td&gt;
 &lt;/tr&gt;
 &lt;tr&gt;
 &lt;td align="center"&gt;Alt-%&lt;/td&gt;
@@ -734,18 +1407,14 @@ Man-made structures also show up as strong reflectors. In the radargram below, w
 &lt;p&gt;&lt;img src="/images/chronology_of_robots/bob.jpg" /&gt;&lt;/p&gt;
 
 
-&lt;div class="highlight"&gt;&lt;pre&gt;
-&lt;/pre&gt;&lt;/div&gt;
-
-
 &lt;p&gt;Bob was Team Caltech’s entry for the 2004 DARPA Grand Challenge, which was a race across the desert for fully autonomous vehicles. I wasn’t involved in that competition, but we used the vehicle for a course project and in early preparations for the 2005 DGC while waiting for Alice to be completed.&lt;/p&gt;
 &lt;p&gt;In 2005, I worked on a PID controller that calculated the appropriate steering and throttle/brake commands to keep Bob/Alice on the desired path. When I started working on this project, I’d assumed that the control theory would be the tricky part. Instead, I wound up spending most of my efforts characterizing/negotiating the interfaces. If new paths generated by the planner weren’t continuous with the robot’s current state, no amount of tuning the gains could fix the vehicle’s overall performance. This is a tricky balance of how far in front of the vehicle a trajectory should remain fixed: too short, and you get jerky control, too far, and your vehicle won’t be able to a avoid newly-detected obstacle. Similarly, if my output steering commands were too high frequency, we’d blow up the steering pump. Repeatedly. This led to negotiations with the vehicle team over how much responsiveness was worth sacrificing to protect the hardware.&lt;/p&gt;
-&lt;p&gt;&lt;img src="/images/chronology_of_robots/alice-launch.jpg" /&gt;  &lt;br /&gt;
+&lt;p&gt;&lt;img src="/images/chronology_of_robots/alice-launch.jpg" /&gt;
 Launching for the 2005 DARPA Grand Challenge
 (Alice! Once you have a Bob, the next one has to be Alice.)&lt;/p&gt;
 &lt;p&gt;Alice was Team Caltech’s entry for the 2005 DARPA Grand Challenge, which was another desert race, and for the 2007 DARPA Urban Challenge, which required following traffic laws while interacting with other cars/robots.&lt;/p&gt;
 &lt;p&gt;In 2007, my main project was a module that would use the 4 bumper-mounted lidars to track moving vehicles. I did this by segmenting the scan based on discontinuities, looking for L shaped segments in the 2D scan, and then associating nearby segments in sequential scans. By looking at the direction the segment was moving, I could determine which corner we were tracking, and use the corner coordinates for a more accurate representation of the vehicle’s location. I used a simple Kalman Filter to predict the motion of the vehicles when occluded, and even reassociate them with an existing track when they reappeared. The basic algorithm design was sound, but I struggled with the implementation, spending way too much time debugging. This experience made me realize that I needed to become a better programmer if I wanted to be a roboticist.&lt;/p&gt;
-&lt;p&gt;&lt;img src="/images/chronology_of_robots/modsnake.png" /&gt;  &lt;br /&gt;
+&lt;p&gt;&lt;img src="/images/chronology_of_robots/modsnake.png" /&gt;
 They can also climb legs.&lt;/p&gt;
 &lt;p&gt;Snake robots - used for a course project on reinforcement learning, where we attempted to learn gait parameters that would lead to more efficient locomotion.&lt;/p&gt;
 &lt;div align="center"&gt;
@@ -758,7 +1427,7 @@ They can also climb legs.&lt;/p&gt;
 &lt;p&gt;&lt;img src="/images/chronology_of_robots/youbot.png" /&gt;
 (Kuka youBot)&lt;/p&gt;
 &lt;p&gt;I attended the 4th BRICS research camp on robot software architectures, where we used these in the context of a navigation task. The goal was to develop an architecture that would allow the robot to switch between navigation by following waypoints (whose relative spatial layout could and would change) and navigation in gridmaps with a fixed geometry. I wrote a state machine that was in charge of switching between the different navigation modes, and a controller that followed waypoints in the order specified, with the constraint that the next one in the list had to be visible from the current one.&lt;/p&gt;
-&lt;p&gt;&lt;img src="/images/chronology_of_robots/lagr.jpg" /&gt; 
+&lt;p&gt;&lt;img src="/images/chronology_of_robots/lagr.jpg" /&gt;
 (LAGR)&lt;/p&gt;
 &lt;p&gt;I was the technical lead for CMU’s entry into the TARDEC CANINE challenge. This was essentially a competition for robots to play fetch in the presence of moving obstacles. I designed the architecture that we used, and wrote the state machine that handled high-level control at each stage of the challenge. I also used this robot for a research project that investigated using Monte-Carlo Tree Search to plan paths that minimized distance traveled while maximizing information gain.&lt;/p&gt;
 &lt;p&gt;&lt;img src="/images/chronology_of_robots/m3pi.jpg" style="width: 275px;" /&gt;
@@ -768,9 +1437,11 @@ They can also climb legs.&lt;/p&gt;
 &lt;p&gt;PR2! I had an internship at Bosch, working towards the far-off goal of having a robot clean up after me. Robot manipulation in clutter is an open problem; we hypothesized that if a human provided guidance for the initial segmentation, the rest of the task might become tractable. I designed and implemented a modular architecture for shared autonomy in the context of table clearing, with interchangeable human interfaces and segmentation algorithms.&lt;/p&gt;
 &lt;p&gt;&lt;img src="/images/chronology_of_robots/baxter.png" /&gt;&lt;/p&gt;
 &lt;p&gt;Baxter! Also at Bosch. I didn’t use this robot for research, but it was involved in a prank.&lt;/p&gt;
-&lt;p&gt;&lt;img src="/images/chronology_of_robots/google.jpg" /&gt;  &lt;br /&gt;
+&lt;p&gt;&lt;img src="/images/chronology_of_robots/google.jpg" /&gt;
  (image from Google’s &lt;a href="http://googleblog.blogspot.com/2014/04/the-latest-chapter-for-self-driving-car.html"&gt;blog post&lt;/a&gt;)&lt;/p&gt;
-&lt;p&gt;Google car! Best internship ever. Some of the stuff I worked on even wound up in the &lt;a href="http://www.youtube.com/watch?v=dk3oc1Hr62g"&gt;video&lt;/a&gt; they released.&lt;/p&gt;</summary></entry><entry><title>Features of a Successful Internship</title><link href="/blog/2014/10/28/features-of-a-successful-internship/" rel="alternate"></link><updated>2014-10-28T16:58:00-05:00</updated><author><name>Laura Lindzey</name></author><id>tag:,2014-10-28:blog/2014/10/28/features-of-a-successful-internship/</id><summary type="html">&lt;p&gt;Between my MS and starting a PhD, I did a few internships. One in particular stood out as a fantastic experience, and I've been thinking about what they did so right.&lt;/p&gt;
+&lt;p&gt;Google car! Best internship ever. Some of the stuff I worked on even wound up in the &lt;a href="http://www.youtube.com/watch?v=dk3oc1Hr62g"&gt;video&lt;/a&gt; they released.&lt;/p&gt;
+&lt;p&gt;&lt;img src="/images/chronology_of_robots/artemis.jpg" /&gt;&lt;/p&gt;
+&lt;p&gt;&lt;a href="http://artemis2015.weebly.com"&gt;Artemis!&lt;/a&gt; This was a hover-capable autonomous underwater vehicle built by &lt;a href="http://www.stoneaerospace.com"&gt;Stone Aerospace&lt;/a&gt; in order to explore underneath the McMurdo Ice Shelf. In this picture, we're testing out at Lake Travis. One of my colleagues is hanging out in a kayak next to Artemis, trying to keep motorboats from running over it while we test. I worked on the programming team, which included everything from writing hardware drivers to designing and implementing the high-level state machine that was used to implement mission scripts and seamlessly switch between manual and autonomous control.&lt;/p&gt;</summary></entry><entry><title>Features of a Successful Internship</title><link href="/blog/2014/10/28/features-of-a-successful-internship/" rel="alternate"></link><updated>2014-10-28T16:58:00-05:00</updated><author><name>Laura Lindzey</name></author><id>tag:,2014-10-28:blog/2014/10/28/features-of-a-successful-internship/</id><summary type="html">&lt;p&gt;Between my MS and starting a PhD, I did a few internships. One in particular stood out as a fantastic experience, and I've been thinking about what they did so right.&lt;/p&gt;
 
 
 &lt;p&gt;&lt;strong&gt;Things my mentor did:&lt;/strong&gt;&lt;/p&gt;

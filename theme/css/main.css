@@ -488,13 +488,28 @@ img {
 /* LEL Oct 22, 2019.
  * Trying to get images to center, as suggested in
  * https://stackoverflow.com/questions/7055393/center-image-using-text-align-center
+ * This seems to force the image onto its own line.
  */
 article img.center {
     display: block;
     margin: 0 auto;
 }
 
-
+/* LEL Nov 26, 2019.
+ * Trying to get text to wrap around images.
+ * However, this DOESN"T WORK HERE. However, it works with the raw html...
+*   <img class="right" src="/images/origami_butterfly_pcb/cracking.jpg" alt="" style="width: 25%; max-width: 300px; height: auto; float: right; margin-left: 20px"/>
+* This is particularly weird since the above img.center definitely works ... but when I use it, I don't have any style tags in the html?
+*/
+/*
+article img.right {
+    float: right;
+    margin-left: 20px;
+    margin-right: 0;
+    width: 25%;
+    max-width: 300px;
+ }
+*/
 
 /* added so I can rotate images when inserting
 in markdown using html. see:
