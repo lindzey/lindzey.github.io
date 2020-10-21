@@ -60,7 +60,7 @@
 <p>I'm a software engineer in the Deep Submergence Lab at WHOI, and I'm currently 
 at sea with Sentry, a robot whose primary mission is to map the ocean floor.
 So, what do I do when at sea? And why are they sending software engineers out 
-for operations?</p>
+for operations?<sup id="sf-sentry-watchstanding-1-back"><a title=" Actually, I'm salaried, so regardless of your opinions about having developers be intimately familiar with the systems they work on, it's cheaper to send me to sea than a tech who would get overtime. I'm not complaining! " class="simple-footnote" href="#sf-sentry-watchstanding-1">1</a></sup></p>
 
 
 <p>At sea, my job usually includes:</p>
@@ -88,7 +88,7 @@ So, in addition to multibeam grids, we do a lot of photo surveys, which require 
 <div class="figure">
   <img class="center" alt="Multibeam map" src="/images/sentry_watchstanding/sentry505_mb_processing.jpg" style="width: 100%; max-width:600px; height: auto">
   <p class="caption">
-Multibeam data collected on dive sentry505 on the 2018-cordes cruise. This screencap was taken during post-processing using mbsystem. Black lines show the path Sentry swam, and the resulting topography is hillshaded. You can see some minor alignment errors where the multibeam swaths overlap that are corrected with further processing.
+Multibeam data collected on dive sentry505 on the 2018-cordes cruise.<sup id="sf-sentry-watchstanding-2-back"><a title=" Huge thanks to the Chief Scientist Eric Cordes and his team for not putting an embargo on this data, so I could post it publicly within 2 years of the cruise. " class="simple-footnote" href="#sf-sentry-watchstanding-2">2</a></sup> This screencap was taken during post-processing using <a href="https://www.mbari.org/products/research-software/mb-system/">mbsystem</a>. Black lines show the path Sentry swam, and the resulting topography is hillshaded. You can see some minor alignment errors where the multibeam swaths overlap that are corrected with further processing.
 
 </p></div>
 
@@ -97,18 +97,18 @@ Multibeam data collected on dive sentry505 on the 2018-cordes cruise. This scree
 <p>Sentry's unique control scheme means that propelling itself to the bottom like torpedo-shaped AUVs typically do by swimming in a circle would burn up a lot of battery power. 
 Since mission length is primarily limited by the batteries, that's no good. 
 It would also be slow. 
-Instead, we launch Sentry with “descent weights" that make it negatively buoyant, so it descends at ~0.6m/s. Once it detects the sea floor with one of its sonars, it drops the descent weights and becomes neutrally buoyant. 
+Instead, we launch Sentry with “descent weights" that make it negatively buoyant, so it descends at ~0.6m/s. Once it detects the sea floor with one of its sonars, it drops the descent weights<sup id="sf-sentry-watchstanding-3-back"><a title=" Yes, they are left on the ocean floor, which can require permits. We try not to drop them in the middle of the survey area, if it's somewhere with interesting hydrothermal vents. " class="simple-footnote" href="#sf-sentry-watchstanding-3">3</a></sup> and becomes neutrally buoyant. 
 It then spends 8-20+ hours swimming pre-programmed survey lines. 
 At the end of the dive, it drops the ascent weights and floats to the surface at ~1m/s.
 This is the same speed as a leisurely stroll -- ascent and descent can each take well over an hour in deeper water.</p>
 <p><strong>Wait. Isn't Sentry autonomous? Why do humans need to monitor it?</strong></p>
 <p>Even if a dive goes perfectly, we will have human interaction twice: first to correct the robot's position estimate and once to tell it to drop the ascent weights.</p>
 <p><em>Initial Shift</em></p>
-<p>When Sentry is at the surface, it know where it is using GPS. 
-However, this isn’t used in the control loop — we just tell it where the start of the survey is, and it assumes that it has been dropped exactly there.</p>
-<p>Once within ~100m of the ocean floor, Sentry’s DVL<sup id="sf-sentry-watchstanding-1-back"><a title=' Doppler Velocity Logger — this instrument has 4 sonar beams angled out, and by using the doppler shift of each beam and assuming that whatever surface is generating a return is also stationary, you can compute the 3D velocity of the robot. This is similar to how "radar guns" are able to detect speeding vehicles. ' class="simple-footnote" href="#sf-sentry-watchstanding-1">1</a></sup> is able to make observations of Sentry’s relative velocity. Combined with pressure/depth data and INS accelerations / orientation, a simple kalman filter can estimate Sentry’s position relative to wherever the dive started. </p>
+<p>When Sentry is at the surface, it knows where it is using GPS. 
+However, this information isn’t used in the control loop — we just tell it where the start of the survey is, and it assumes that it has been dropped exactly there.</p>
+<p>Once within ~100m of the ocean floor, Sentry’s DVL<sup id="sf-sentry-watchstanding-4-back"><a title=' Doppler Velocity Logger — this instrument has 4 sonar beams angled out, and by using the doppler shift of each beam and assuming that whatever surface is generating a return is also stationary, you can compute the 3D velocity of the robot. This is similar to how "radar guns" are able to detect speeding vehicles. ' class="simple-footnote" href="#sf-sentry-watchstanding-4">4</a></sup> is able to make observations of Sentry’s relative velocity. Combined with pressure/depth data and INS accelerations / orientation, a simple kalman filter can estimate Sentry’s position relative to wherever the dive started. </p>
 <p>However, when Sentry is in the middle of the water column, there aren’t any good sensor inputs for it to estimate its position: double-integrating accelerations is noisy and diverges quickly. So, its onboard code just assumes that it doesn’t drift at all. (Hah.) </p>
-<p>Whenever it gets to the bottom, the operator can compute how much it drifted by using the Ship’s USBL to get Sentry’s position relative to the ship and comparing that to where Sentry thinks it is.</p>
+<p>Whenever it gets to the bottom, the operator can compute how much it drifted by using the ship’s USBL to get Sentry’s position relative to the ship and comparing that to where Sentry thinks it is.</p>
 <div class="figure">
   <img class="center" alt="navg3 operator interface" src="/images/sentry_watchstanding/navg3.png" style="width: 100%; max-width:600px; height: auto">
   <p class="caption">
@@ -122,18 +122,20 @@ That offset is then manually entered and acoustically transmitted to sentry, all
 This is definitely on the wishlist, but we have limited developer time and money. 
 However, it's also more complicated than you might think. 
 The USBL fix jumps around, which means that the resulting position estimate can jump. (This is also a common problem for autonomous ground vehicles, where the GPS positions jump but you want control to be smooth and relative to what the sensors see.)
-Overcorrecting to a jumpy position estimate isn't good for a survey, where it is more important to swim a grid pattern with even coverage than it is for the lines to be exactly at a given coordinate. 
-We also sometimes re-purpose the shift to move Sentry out of the way of other assets that are in the water.<sup id="sf-sentry-watchstanding-2-back"><a title=" We don't have a good way to send updated plans to Sentry during a dive; however, updating the offset allows us to arbitrarily translate the existing survey geometry. " class="simple-footnote" href="#sf-sentry-watchstanding-2">2</a></sup></p>
+Overcorrecting to a jumpy position estimate isn't good for a survey, where it is more important to swim a grid pattern with evenly spaced coverage than it is for the lines to be exactly at a given coordinate. 
+We also sometimes re-purpose the shift to move Sentry out of the way of other assets that are in the water.<sup id="sf-sentry-watchstanding-5-back"><a title=" We don't have a good way to send updated plans to Sentry during a dive; however, updating the offset allows us to arbitrarily translate the existing survey geometry. " class="simple-footnote" href="#sf-sentry-watchstanding-5">5</a></sup></p>
 <p><em>Terminating the dive</em></p>
-<p>Second, it's best for everybody if Sentry stays on the bottom until the boat is ready to recover it. 
-So, we want to manually trigger the ascent if at all possible. 
-It's safer down there -- once on the surface, Sentry is subject to currents, waves (wear-and tear on mechanical parts) and could get run over by another ship. 
-Plus, all of our acoustic communications stop working when Sentry is bobbing at the surface with the transducers out of the water. 
+<p>Missions are typically designed with a holding pattern at the end, and if everything has gone well, the operator will manually trigger the ascent when the ship is in position and ready to recover the AUV.
+We don't want Sentry to just pop up to the surface whenever the primary survey is finished -- it's safer at the sea floor!
+Once on the surface, Sentry is subject to currents, waves (wear-and tear on mechanical parts) and could get run over by another ship. 
+Plus, all of our acoustic communications stop working when Sentry is bobbing at the surface with the transducers out of the water.
 At that point, we are limited to receiving text messages with its GPS coordinates via Iridium, a radio beacon that the ship can detect to get a bearing, visual strobes, and a short-range freewave radio (useful within a few hundred meters to joystick Sentry into position for recovery). </p>
-<p>Sentry would cost millions to replace and there's only one, so we really want it to come back. So, we have MANY ways for sentry to decide to drop its weights and return to the surface:</p>
+<p>Sentry would cost millions to replace and there's only one. 
+We really want it to come back from every mission.
+So, we have a variety of ways for Sentry to decide to drop its weights and return to the surface:</p>
 <ol>
 <li>The operator uses the acoustic modem to send a message that is processed through the software stack, causing the cams to open and drop the weights. This is the preferred method.</li>
-<li>The operator uses a separate transducer to send an acoustic command to the XRs/LBL transponders. On the vehicle, they are entirely self contained, running on internal battery power, and have direct control over both the cams and the burnwires.<sup id="sf-sentry-watchstanding-3-back"><a title=" The primary release is a cam that turns to release the weight, and the second is a burnwire, which corrodes when current is run through it. " class="simple-footnote" href="#sf-sentry-watchstanding-3">3</a></sup> The transponders themselves are also redundant -- there are two of them (one listens at 14kHz and the other at 10.5kHz), and each controls the motor to one ascent weight and the burnwire to the other. So, if one fails (or the acoustic conditions aren't favorable for its frequency) the other is sufficient to drop both weights.</li>
+<li>The operator uses a separate transducer to send an acoustic command to the XRs/LBL transponders. On the vehicle, they are entirely self contained, running on internal battery power, and have direct control over both the cams and the burnwires.<sup id="sf-sentry-watchstanding-6-back"><a title=" The primary release is a cam that turns to release the weight and the second is a burnwire, which corrodes within ~30 minutes when current is run through it. " class="simple-footnote" href="#sf-sentry-watchstanding-6">6</a></sup> The transponders themselves are also redundant -- there are two of them (one listens at 14kHz and the other at 10.5kHz), and each controls the motor to one ascent weight and the burnwire to the other. So, if one fails (or the acoustic conditions aren't favorable for its frequency) the other is sufficient to drop both weights.</li>
 <li>
 <p>Something goes wrong in the mission, triggering an abort in software: </p>
 <p>a. If battery percentage goes below 9% the weights will be released. Some battery power is kept in reserve for the ascent and for driving on the surface so we can remote control it into position to be snagged by the ship. </p>
@@ -212,11 +214,17 @@ Sentrysitter GUI. The radio buttons at the bottom are populated by the acoustic 
 Watchstanding is a great time to catch up on media consumption!
 </p>
 </div><ol class="simple-footnotes"><li id="sf-sentry-watchstanding-1">
-Doppler Velocity Logger — this instrument has 4 sonar beams angled out, and by using the doppler shift of each beam and assuming that whatever surface is generating a return is also stationary, you can compute the 3D velocity of the robot. This is similar to how "radar guns" are able to detect speeding vehicles.
+Actually, I'm salaried, so regardless of your opinions about having developers be intimately familiar with the systems they work on, it's cheaper to send me to sea than a tech who would get overtime. I'm not complaining!
  <a class="simple-footnote-back" href="#sf-sentry-watchstanding-1-back">↩</a></li><li id="sf-sentry-watchstanding-2">
-We don't have a good way to send updated plans to Sentry during a dive; however, updating the offset allows us to arbitrarily translate the existing survey geometry.  <a class="simple-footnote-back" href="#sf-sentry-watchstanding-2-back">↩</a></li><li id="sf-sentry-watchstanding-3">
-The primary release is a cam that turns to release the weight, and the second is a burnwire, which corrodes when current is run through it.
- <a class="simple-footnote-back" href="#sf-sentry-watchstanding-3-back">↩</a></li></ol>
+Huge thanks to the Chief Scientist <a href="https://sites.temple.edu/cordeslab/erik-cordes-principal-investigator/">Eric Cordes</a> and his team for not putting an embargo on this data, so I could post it publicly within 2 years of the cruise.
+ <a class="simple-footnote-back" href="#sf-sentry-watchstanding-2-back">↩</a></li><li id="sf-sentry-watchstanding-3">
+Yes, they are left on the ocean floor, which can require permits. We try not to drop them in the middle of the survey area, if it's somewhere with interesting hydrothermal vents.
+ <a class="simple-footnote-back" href="#sf-sentry-watchstanding-3-back">↩</a></li><li id="sf-sentry-watchstanding-4">
+Doppler Velocity Logger — this instrument has 4 sonar beams angled out, and by using the doppler shift of each beam and assuming that whatever surface is generating a return is also stationary, you can compute the 3D velocity of the robot. This is similar to how "radar guns" are able to detect speeding vehicles.
+ <a class="simple-footnote-back" href="#sf-sentry-watchstanding-4-back">↩</a></li><li id="sf-sentry-watchstanding-5">
+We don't have a good way to send updated plans to Sentry during a dive; however, updating the offset allows us to arbitrarily translate the existing survey geometry.  <a class="simple-footnote-back" href="#sf-sentry-watchstanding-5-back">↩</a></li><li id="sf-sentry-watchstanding-6">
+The primary release is a cam that turns to release the weight and the second is a burnwire, which corrodes within ~30 minutes when current is run through it.
+ <a class="simple-footnote-back" href="#sf-sentry-watchstanding-6-back">↩</a></li></ol>
   </div><!-- /.entry-content -->
 </article>
 
