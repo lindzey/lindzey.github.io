@@ -123,7 +123,7 @@ This is definitely on the wishlist, but we have limited developer time and money
 However, it's also more complicated than you might think. 
 The USBL fix jumps around, which means that the resulting position estimate can jump. (This is also a common problem for autonomous ground vehicles, where the GPS positions jump but you want control to be smooth and relative to what the sensors see.)
 Overcorrecting to a jumpy position estimate isn't good for a survey, where it is more important to swim a grid pattern with even coverage than it is for the lines to be exactly at a given coordinate. 
-We also sometimes re-purpose the shift to move Sentry out of the way of other assets that are in the water.<sup id="sf-sentry-watchstanding-2-back"><a title=" We don't have a good way to send updated plans to Sentry during a dive; however, updating the offset allows us to arbitrarily translate the existing survey geometry. [\ref]" class="simple-footnote" href="#sf-sentry-watchstanding-2">2</a></sup></p>
+We also sometimes re-purpose the shift to move Sentry out of the way of other assets that are in the water.<sup id="sf-sentry-watchstanding-2-back"><a title=" We don't have a good way to send updated plans to Sentry during a dive; however, updating the offset allows us to arbitrarily translate the existing survey geometry. " class="simple-footnote" href="#sf-sentry-watchstanding-2">2</a></sup></p>
 <p><em>Terminating the dive</em></p>
 <p>Second, it's best for everybody if Sentry stays on the bottom until the boat is ready to recover it. 
 So, we want to manually trigger the ascent if at all possible. 
@@ -214,8 +214,7 @@ Watchstanding is a great time to catch up on media consumption!
 </div><ol class="simple-footnotes"><li id="sf-sentry-watchstanding-1">
 Doppler Velocity Logger — this instrument has 4 sonar beams angled out, and by using the doppler shift of each beam and assuming that whatever surface is generating a return is also stationary, you can compute the 3D velocity of the robot. This is similar to how "radar guns" are able to detect speeding vehicles.
  <a class="simple-footnote-back" href="#sf-sentry-watchstanding-1-back">↩</a></li><li id="sf-sentry-watchstanding-2">
-We don't have a good way to send updated plans to Sentry during a dive; however, updating the offset allows us to arbitrarily translate the existing survey geometry.
-[\ref] <a class="simple-footnote-back" href="#sf-sentry-watchstanding-2-back">↩</a></li><li id="sf-sentry-watchstanding-3">
+We don't have a good way to send updated plans to Sentry during a dive; however, updating the offset allows us to arbitrarily translate the existing survey geometry.  <a class="simple-footnote-back" href="#sf-sentry-watchstanding-2-back">↩</a></li><li id="sf-sentry-watchstanding-3">
 The primary release is a cam that turns to release the weight, and the second is a burnwire, which corrodes when current is run through it.
  <a class="simple-footnote-back" href="#sf-sentry-watchstanding-3-back">↩</a></li></ol>
   </div><!-- /.entry-content -->
